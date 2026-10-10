@@ -471,8 +471,9 @@ let auditSamplesCache = null;
 
 async function initAuditTab() {
   if (!lastAuditResult) {
-    runAuditEvaluation();
+    await runAuditEvaluation();
   }
+  loadAuditVault();
 }
 
 async function loadSampleManifest(sampleKey) {
@@ -596,6 +597,9 @@ async function runAuditEvaluation() {
     } else {
       suspBox.style.display = 'none';
     }
+
+    // Refresh DynamoDB vault trail
+    loadAuditVault();
   } catch (e) {
     console.error('Audit evaluation error:', e);
   }
@@ -618,4 +622,104 @@ function exportAuditResultJSON() {
 function printAuditNotice() {
   window.print();
 }
+
+// ── AWS Textract Manifest OCR Ingestion ────────────────────────
+let lastTextractParsed = null;
+
+async function loadTextractSample(sampleKey) {
+  try {
+    const res = await fetch('/api/textract/samples');
+    const samples = await res.json();
+    const sample = samples[sampleKey];
+    if (!sample) return;
+
+    const parseRes = await fetch('/api/textract/parse', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw_text: sample.raw_text })
+    });
+    const parsed = await parseRes.json();
+    lastTextractParsed = parsed;
+
+    const box = document.getElementById('textractOcrBox');
+    if (box) box.style.display = 'block';
+
+    const ext = parsed.extracted_manifest;
+    document.getElementById('ocrVehicle').innerText = ext.vehicle_number;
+    document.getElementById('ocrGstin').innerText = ext.consignor_gstin;
+    document.getElementById('ocrCategory').innerText = ext.pwm_category;
+    document.getElementById('ocrNetWeight').innerText = ext.weights.net_plastic_weight_mt + ' MT';
+    document.getElementById('ocrConfidence').innerText = `${Math.round(parsed.confidence_score * 100)}% Confidence (${parsed.provider})`;
+    document.getElementById('ocrPreview').innerText = parsed.raw_text_preview;
+    document.getElementById('textractStatusBadge').innerText = 'OCR Processed';
+  } catch (e) {
+    console.warn('Textract sample error:', e);
+  }
+}
+
+function pipeTextractToAudit() {
+  if (!lastTextractParsed || !lastTextractParsed.audit_bridge_payload) {
+    alert('Please select or upload a Textract manifest first.');
+    return;
+  }
+  const bridge = lastTextractParsed.audit_bridge_payload;
+  document.getElementById('auditCompanyId').value = bridge.company_id;
+  document.getElementById('auditCompanyName').value = bridge.company_name;
+  document.getElementById('auditTotalIntroduced').value = bridge.manifest_tonnage_introduced_mt;
+  document.getElementById('auditWasteUtilized').value = bridge.waste_utilized_mt;
+  document.getElementById('auditMandatedPct').value = bridge.mandated_threshold_pct;
+  runAuditEvaluation();
+}
+
+// ── Amazon DynamoDB & S3 Immutable Vault ────────────────────────
+async function loadAuditVault() {
+  const tbody = document.getElementById('vaultTableBody');
+  if (!tbody) return;
+  try {
+    const res = await fetch('/api/vault/records');
+    const records = await res.json();
+    if (!records || records.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="padding:12px; text-align:center; color:var(--text-muted);">No sealed audits in vault yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = '';
+    records.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.style.borderBottom = '1px solid #1c241f';
+
+      let statusBadge = '';
+      if (r.compliance_status === 'COMPLIANT') {
+        statusBadge = '<span class="badge live" style="font-size:10.5px;">COMPLIANT</span>';
+      } else if (r.compliance_status === 'WARNING') {
+        statusBadge = '<span class="badge mock" style="font-size:10.5px;">WARNING</span>';
+      } else {
+        statusBadge = '<span class="badge" style="background:#d06d4e; color:#fff; font-size:10.5px;">PENALIZED</span>';
+      }
+
+      let finText = '';
+      if (r.net_credits_earned > 0) {
+        finText = `<span style="color:#74c69d;">+${r.net_credits_earned} MT Credits</span>`;
+      } else if (r.fine_levied_inr > 0) {
+        finText = `<span style="color:#e76f51;">₹${Number(r.fine_levied_inr).toLocaleString('en-IN')} Fine</span>`;
+      } else {
+        finText = '<span style="color:var(--text-muted);">No Dues</span>';
+      }
+
+      const shaShort = r.integrity_sha256 ? r.integrity_sha256.substring(0, 12) + '...' : '--';
+
+      tr.innerHTML = `
+        <td style="padding: 8px 6px; font-family: monospace; color: var(--accent);">${r.audit_id || '--'}</td>
+        <td style="padding: 8px 6px;"><b>${r.company_name}</b><br><span style="font-size:10.5px; color:var(--text-muted);">${r.company_id}</span></td>
+        <td style="padding: 8px 6px;">${statusBadge}</td>
+        <td style="padding: 8px 6px;">${finText}</td>
+        <td style="padding: 8px 6px;"><code style="background:#090d0b; padding:2px 6px; border-radius:3px; color:#a8dadc; font-size:11px;">${shaShort}</code></td>
+        <td style="padding: 8px 6px; font-size:11.5px; color:#c5cdc7;">☁️ ${r.storage_backend}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (e) {
+    console.warn('Error loading audit vault:', e);
+  }
+}
+
 

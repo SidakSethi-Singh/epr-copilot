@@ -21,16 +21,56 @@ Resources:
           BEDROCK_MODEL_ID: !Ref BedrockModelId
           GUARDRAIL_ID: !Ref GuardrailId
           GUARDRAIL_VERSION: !Ref GuardrailVersion
+          DYNAMODB_TABLE_NAME: !Ref EprAuditVaultTable
+          S3_BUCKET_NAME: !Ref EprManifestBucket
       Policies:
         - Statement:
             - Effect: Allow
               Action:
                 - bedrock:InvokeModel
                 - bedrock:ApplyGuardrail
+                - textract:AnalyzeDocument
+                - textract:DetectDocumentText
+                - dynamodb:PutItem
+                - dynamodb:GetItem
+                - dynamodb:Query
+                - dynamodb:Scan
+                - s3:PutObject
+                - s3:GetObject
               Resource: "*"
       Events:
         ApiEvent:
           Type: HttpApi
+
+  EprAuditVaultTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: epr-compliance-audit-vault
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: company_id
+          AttributeType: S
+        - AttributeName: audit_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: company_id
+          KeyType: HASH
+        - AttributeName: audit_id
+          KeyType: RANGE
+
+  EprManifestBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "epr-manifest-vault-${AWS::AccountId}-${AWS::Region}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
 
 Parameters:
   BedrockModelId:
@@ -50,3 +90,9 @@ Outputs:
   EprCopilotApiUrl:
     Description: HTTP API endpoint URL
     Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  DynamoDbVaultTable:
+    Description: DynamoDB Table Name for Immutable Audits
+    Value: !Ref EprAuditVaultTable
+  S3ManifestBucket:
+    Description: S3 Bucket Name for Manifest Slips
+    Value: !Ref EprManifestBucket

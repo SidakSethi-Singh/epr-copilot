@@ -194,3 +194,27 @@ def test_no_question_text_in_logs(client, caplog):
     for record in caplog.records:
         assert secret_text not in record.message
 
+
+def test_textract_samples_and_parse_endpoints(client):
+    res = client.get("/api/textract/samples")
+    assert res.status_code == 200
+    data = res.get_json()
+    assert "vapi_weighbridge" in data
+
+    vapi_text = data["vapi_weighbridge"]["raw_text"]
+    parse_res = client.post("/api/textract/parse", json={"raw_text": vapi_text})
+    assert parse_res.status_code == 200
+    parse_data = parse_res.get_json()
+    assert parse_data["status"] == "SUCCESS"
+    assert parse_data["extracted_manifest"]["vehicle_number"] == "GJ-15-XY-4401"
+
+
+def test_vault_records_endpoint(client):
+    res = client.get("/api/vault/records")
+    assert res.status_code == 200
+    records = res.get_json()
+    assert isinstance(records, list)
+    assert len(records) > 0
+    assert "integrity_sha256" in records[0]
+
+

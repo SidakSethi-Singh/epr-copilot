@@ -25,6 +25,9 @@ from rag.leaderboard import compute_leaderboard
 from rag.circular_economy import evaluate_road_reuse
 from rag.audit_engine import evaluate_manifest_compliance, get_sample_manifests
 from rag.rules import get_ruleset_version, get_verified_on, get_rules_status_summary
+from rag.textract_manifest import parse_manifest_with_textract, get_sample_textract_manifests
+from rag.audit_vault import save_audit_record, list_audit_vault
+
 
 
 app = Flask(__name__)
@@ -148,7 +151,35 @@ def api_audit_evaluate():
         fiscal_year=fiscal_year,
         consecutive_default_year=consecutive_years
     )
+    # Automatically seal record into Amazon DynamoDB / Immutable Vault
+    vault_receipt = save_audit_record(result)
+    result["vault_receipt"] = vault_receipt
     return jsonify(result)
+
+
+@app.route("/api/textract/samples")
+def api_textract_samples():
+    """Returns sample weighbridge and GST E-way bill manifests for Textract testing."""
+    return jsonify(get_sample_textract_manifests())
+
+
+@app.route("/api/textract/parse", methods=["POST"])
+def api_textract_parse():
+    """
+    AWS Textract Manifest OCR Extractor:
+    Extracts vehicle number, GSTIN, E-Way bill, PWM category, and gross/tare/net tonnage.
+    """
+    data = request.get_json(force=True, silent=True) or {}
+    raw_text = data.get("raw_text", "")
+    parsed = parse_manifest_with_textract(raw_text=raw_text)
+    return jsonify(parsed)
+
+
+@app.route("/api/vault/records")
+def api_vault_records():
+    """Returns tamper-proof immutable audit records stored in DynamoDB vault."""
+    return jsonify(list_audit_vault(limit=20))
+
 
 
 @app.route("/api/ask", methods=["POST"])

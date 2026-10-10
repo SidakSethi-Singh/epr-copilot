@@ -408,6 +408,34 @@
         Inspects waste manifests against CPCB Schedule II recycling targets and the MoEFCC Green Credit Rules, 2023. Calculates Green Credits for surplus utilization or computes tiered Environmental Compensation (EC) fines and formal suspension payloads for defaults.
       </p>
 
+      <!-- AWS Textract Manifest OCR Ingestion Box -->
+      <div style="background: #111813; border: 1px solid #2d6a4f; border-radius: 6px; padding: 14px; margin-bottom: 18px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap;">
+          <b style="color: #74c69d; font-size: 13.5px;">📄 AWS Textract Manifest OCR Ingestion Pipeline</b>
+          <span class="rules-pill" id="textractStatusBadge">AWS Textract OCR Ready</span>
+        </div>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
+          Simulate or execute real-time document OCR on Indian transport bilties, weighbridge receipts, and GST Form EWB-01 to auto-ingest net plastic tonnage and category without manual data entry.
+        </p>
+
+        <div class="sample-pills" style="margin-bottom: 10px;">
+          <span class="pill" onclick="loadTextractSample('vapi_weighbridge')">🏭 Vapi GIDC Weighbridge Slip (Cat I Rigid - 24.5 MT)</span>
+          <span class="pill" onclick="loadTextractSample('bhiwandi_eway')">📦 Bhiwandi E-Way Bill (Cat II Flexible - 18.2 MT)</span>
+          <span class="pill" onclick="loadTextractSample('manesar_mlp_bilty')">🚚 IMT Manesar Bilty (Cat III MLP - 31.0 MT)</span>
+        </div>
+
+        <div id="textractOcrBox" style="display: none; background: #0b0f0c; border: 1px solid var(--border); border-radius: 4px; padding: 10px; font-size: 12px; color: #c5cdc7; margin-bottom: 8px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <span><b>Vehicle:</b> <span id="ocrVehicle" style="color: var(--accent);">--</span> | <b>GSTIN:</b> <span id="ocrGstin">--</span></span>
+            <span id="ocrConfidence" style="color: #74c69d; font-weight: 600;">95% Confidence</span>
+          </div>
+          <div><b>Category:</b> <span id="ocrCategory">--</span> | <b>Net Plastic Waste:</b> <span id="ocrNetWeight" style="color: #f4a261; font-weight: 600;">-- MT</span></div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;"><b>Raw Document Stream:</b> <span id="ocrPreview">--</span></div>
+        </div>
+
+        <button class="btn" style="background: #1b4332; font-size: 12px; padding: 6px 12px;" onclick="pipeTextractToAudit()">⚡ Pipe Extracted Manifest to Compliance Engine</button>
+      </div>
+
       <div class="sample-pills" style="margin-bottom: 16px;">
         <span class="pill" onclick="loadSampleManifest('fmcg_compliant')">🟢 FMCG Compliant (Surplus Credits)</span>
         <span class="pill" onclick="loadSampleManifest('retail_warning')">🟡 Retail Warning (Shortfall &lt; 25%)</span>
@@ -507,6 +535,37 @@
         <div style="font-size: 11.5px; color: var(--text-muted); background: #0b0f0c; padding: 8px; border-radius: 4px;">
           <b>Statutory Notice Text:</b> <span id="suspensionNoticeText"></span>
         </div>
+      </div>
+    </div>
+
+    <!-- Amazon DynamoDB & S3 Immutable Audit Vault Card -->
+    <div class="card" style="margin-top: 18px; border-color: #264653;">
+      <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+        <span>🏛️ Amazon DynamoDB &amp; S3 Immutable Audit Vault</span>
+        <span class="rules-pill" style="background: #264653; color: #a8dadc;">SHA-256 Tamper-Proof Audit Trail</span>
+      </div>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+        Evaluated manifest records, penalty determinations, and suspension notices are cryptographically sealed and persisted with immutable SHA-256 integrity digests for court-defensible statutory audit trails.
+      </p>
+
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted);">
+              <th style="padding: 8px 6px;">Audit ID</th>
+              <th style="padding: 8px 6px;">Entity Name</th>
+              <th style="padding: 8px 6px;">Status</th>
+              <th style="padding: 8px 6px;">Net Credits / Fine</th>
+              <th style="padding: 8px 6px;">SHA-256 Integrity Seal</th>
+              <th style="padding: 8px 6px;">Storage Backend</th>
+            </tr>
+          </thead>
+          <tbody id="vaultTableBody">
+            <tr>
+              <td colspan="6" style="padding: 12px; text-align: center; color: var(--text-muted);">Loading sealed records from DynamoDB vault...</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
