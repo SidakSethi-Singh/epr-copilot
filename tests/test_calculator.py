@@ -1,4 +1,3 @@
-import pytest
 from rag.calculator import calculate_liability, get_target, get_annual_return_deadline, _safe_tonnage
 
 

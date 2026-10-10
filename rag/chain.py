@@ -6,16 +6,18 @@ The RAG pipeline for EPR Compliance Copilot, built as a LangGraph graph:
 Supports multiple generation modes, auto-selected based on environment keys.
 Priority order (first key found wins, or set LLM_PROVIDER to force one):
 
-  1. GROQ         -> GROQ_API_KEY      (free tier, ultra-fast LPU inference)
-  2. OPENROUTER   -> OPENROUTER_API_KEY (free :free models via openrouter.ai)
-  3. GEMINI       -> GEMINI_API_KEY or GOOGLE_API_KEY
-  4. ANTHROPIC    -> ANTHROPIC_API_KEY
-  5. OPENAI       -> OPENAI_API_KEY
-  6. MOCK MODE    -> no key needed (returns raw retrieved chunks for free)
+  1. AWS BEDROCK  -> AWS_ACCESS_KEY_ID / BEDROCK_MODEL_ID (Claude 3.5 Sonnet / Amazon Titan)
+  2. GROQ         -> GROQ_API_KEY      (free tier, ultra-fast LPU inference)
+  3. OPENROUTER   -> OPENROUTER_API_KEY (free :free models via openrouter.ai)
+  4. GEMINI       -> GEMINI_API_KEY or GOOGLE_API_KEY
+  5. ANTHROPIC    -> ANTHROPIC_API_KEY
+  6. OPENAI       -> OPENAI_API_KEY
+  7. MOCK MODE    -> no key needed (returns raw retrieved chunks for free)
 
-Current default free models (Sep 2026):
-  Groq:       deepseek-r1-distill-llama-70b  (free tier)
-  OpenRouter: deepseek/deepseek-r1:free       (zero cost :free endpoint)
+Current default models:
+  AWS Bedrock: anthropic.claude-3-5-sonnet-20240620-v1:0 (ap-south-1 Mumbai)
+  Groq:        qwen/qwen3.8-27b  (free tier)
+  OpenRouter:  deepseek/deepseek-r1:free (zero cost :free endpoint)
 """
 
 import os
@@ -67,18 +69,53 @@ def get_active_llm() -> Tuple[str, Optional[Any]]:
     Auto-detects and initialises the best available LLM provider.
 
     Priority:
-      1. Groq          (GROQ_API_KEY)       -- free tier, extremely fast
-      2. OpenRouter    (OPENROUTER_API_KEY) -- routes to free :free models
-      3. Google Gemini (GEMINI_API_KEY / GOOGLE_API_KEY)
-      4. Anthropic     (ANTHROPIC_API_KEY)
-      5. OpenAI        (OPENAI_API_KEY)
-      6. Mock mode     (no key needed)
+      1. AWS Bedrock   (AWS credentials / BEDROCK_MODEL_ID) -- Enterprise AWS native
+      2. Groq          (GROQ_API_KEY)                       -- free tier, extremely fast
+      3. OpenRouter    (OPENROUTER_API_KEY)                 -- routes to free :free models
+      4. Google Gemini (GEMINI_API_KEY / GOOGLE_API_KEY)
+      5. Anthropic     (ANTHROPIC_API_KEY)
+      6. OpenAI        (OPENAI_API_KEY)
+      7. Mock mode     (no key needed)
 
-    Override priority with LLM_PROVIDER=groq|openrouter|gemini|anthropic|openai
+    Override priority with LLM_PROVIDER=bedrock|groq|openrouter|gemini|anthropic|openai
     """
     selected = (os.environ.get("LLM_PROVIDER") or "").strip().lower()
 
-    # ── 1. Groq ────────────────────────────────────────────────────────────────
+    # ── 1. AWS Bedrock (Amazon AWS Native Provider) ───────────────────────────
+    bedrock_model = os.environ.get("BEDROCK_MODEL_ID") or os.environ.get("AWS_BEDROCK_MODEL", "anthropic.claude-3-5-sonnet-20240620-v1:0")
+    has_aws_env = bool(
+        os.environ.get("AWS_ACCESS_KEY_ID")
+        or os.environ.get("AWS_DEFAULT_REGION")
+        or os.environ.get("BEDROCK_MODEL_ID")
+        or os.environ.get("AWS_PROFILE")
+    )
+    if (selected == "bedrock" or (not selected and os.environ.get("BEDROCK_MODEL_ID"))) and has_aws_env:
+        try:
+            from langchain_aws import ChatBedrockConverse
+            region = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION", "ap-south-1")
+            llm = ChatBedrockConverse(
+                model=bedrock_model,
+                region_name=region,
+                temperature=0,
+                max_tokens=1024,
+            )
+            return f"live (AWS Bedrock: {bedrock_model})", llm
+        except Exception:
+            try:
+                from langchain_community.chat_models import BedrockChat
+                region = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION", "ap-south-1")
+                llm = BedrockChat(
+                    model_id=bedrock_model,
+                    region_name=region,
+                    model_kwargs={"temperature": 0, "max_tokens": 1024},
+                )
+                return f"live (AWS Bedrock: {bedrock_model})", llm
+            except Exception as e:
+                print(f"[warning] AWS Bedrock init failed: {e}")
+                if selected == "bedrock":
+                    return "mock", None
+
+    # ── 2. Groq ────────────────────────────────────────────────────────────────
     # Free-tier models confirmed active Sep 2026:
     #   qwen/qwen3.8-27b       ← default (active, fast, free)
     #   openai/gpt-oss-20b     ← active lightweight, free

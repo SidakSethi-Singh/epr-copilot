@@ -7,32 +7,31 @@
 
 A citation-grounded compliance copilot and obligation calculation engine for India's plastic waste Extended Producer Responsibility (EPR) regulations (Schedule II of the Plastic Waste Management Rules, 2016 and subsequent MoEFCC & CPCB amendments).
 
-Built on **Flask + LangChain + LangGraph**, featuring:
+Built on **Flask + LangChain + LangGraph**, architected for **Amazon Web Services (AWS)**:
 - **Statutory Legal Q&A Assistant**: Grounded in official CPCB notifications, with citation badges and confidence ratings (`verified`, `reported`, `needs_verify`).
-- **Multi-Model Dynamic LLM Routing**: Supports **Groq** (free tier with `qwen/qwen3.8-27b`), **OpenRouter** (free tier with `deepseek/deepseek-r1:free`), **Google Gemini** (`gemini-2.5-flash`), **Anthropic Claude**, and **OpenAI**, with automated fallback to zero-dependency **Mock Mode**.
+- **Amazon Bedrock & Multi-Model Dynamic LLM Routing**: Native support for **Amazon Bedrock** (`anthropic.claude-3-5-sonnet`, `amazon.titan-text-express-v1`, `meta.llama3-70b-instruct`) hosted in `ap-south-1` (Mumbai), plus **Groq**, **OpenRouter**, **Google Gemini**, **Anthropic Claude**, **OpenAI**, with automated fallback to zero-dependency **Mock Mode**.
 - **Interactive EPR Liability & Penalty Calculator**: Computes Category I–IV statutory recycling targets, mandatory recycled-content requirements, certificate procurement budgets, and Environmental Compensation (EC) penalty exposures with a 3-year refund schedule.
 - **Audit-Ready PDF / Print Report Export**: One-click printable compliance reports with dedicated `@media print` layout.
 - **CPCB Portal Registration Readiness Checklist**: Practical compliance guide for Producers, Importers, Brand Owners (PIBOs), and Sellers.
 - **Automated Test Suite**: 18 passing unit and integration tests across calculation math, RAG retrieval, and API routes.
-- **Future Roadmap**: See [UPGRADES.md](UPGRADES.md) for planned features (Hybrid RAG, Invoice/BOM Vision Parser, Agentic Tool-Calling).
+- **Future Roadmap**: See [UPGRADES.md](UPGRADES.md) for planned features (Amazon OpenSearch Hybrid RAG, Textract Invoice/BOM Vision Parser, Agentic Tool-Calling).
 
 ---
 
-## Architecture
+## Architecture (AWS Cloud-Native Alignment)
 
 ```
-Browser  -->  Flask (app.py)  -->  LangGraph Pipeline (rag/chain.py)
-                                       │
-                                       ├─► retrieve_node: TF-IDF retriever
-                                       │   (rag/retriever.py) over rag/knowledge_base.py (22 statutory chunks)
-                                       │
-                                       └─► generate_node:
-                                           ├── Live: Groq (qwen/qwen3.8-27b - Free & Fast)
-                                           ├── Live: OpenRouter (deepseek/deepseek-r1:free)
-                                           ├── Live: Google Gemini (gemini-2.5-flash)
-                                           ├── Live: Anthropic Claude (claude-3-5-sonnet)
-                                           ├── Live: OpenAI (gpt-4o)
-                                           └── Mock Mode: (zero API key fallback)
+Browser  -->  Flask API (ECS Fargate / App Runner)  -->  LangGraph Pipeline (rag/chain.py)
+                                                              │
+                                                              ├─► retrieve_node: TF-IDF / Amazon OpenSearch
+                                                              │   (rag/retriever.py) over rag/knowledge_base.py (22 statutory chunks)
+                                                              │
+                                                              └─► generate_node:
+                                                                  ├── Enterprise: Amazon Bedrock (Claude 3.5 Sonnet / Titan)
+                                                                  ├── Dev: Groq (qwen/qwen3.8-27b - Free & Fast)
+                                                                  ├── Dev: OpenRouter (deepseek/deepseek-r1:free)
+                                                                  ├── Live: Google Gemini / Claude / OpenAI
+                                                                  └── Mock Mode: (zero API key fallback)
 ```
 
 - **Retrieval**: `langchain_community.retrievers.TFIDFRetriever` over 22 statutory knowledge chunks with exact legal clause citations.
