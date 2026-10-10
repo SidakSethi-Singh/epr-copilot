@@ -7,7 +7,6 @@ from rag.calculator import (
     _safe_tonnage,
 )
 
-
 def test_safe_tonnage():
     assert _safe_tonnage(100.5) == 100.5
     assert _safe_tonnage("50") == 50.0

@@ -42,6 +42,7 @@
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('qaTab', this)">Legal Q&amp;A Assistant</button>
     <button class="tab-btn" onclick="switchTab('calcTab', this)">Obligations, Penalties &amp; Energy Bridge</button>
+    <button class="tab-btn" onclick="switchTab('complianceTab', this)">Quick Compliance Check</button>
     <button class="tab-btn" onclick="switchTab('filingTab', this)">CPCB Filing &amp; Deadlines</button>
     <button class="tab-btn" onclick="switchTab('kbTab', this)">Knowledge Base Browser</button>
   </div>
@@ -51,6 +52,9 @@
     <div class="card">
       <div class="card-title">Ask an EPR Compliance Question</div>
       <textarea id="questionInput" rows="3" placeholder="e.g. What is the statutory boundary between Category II and Category III packaging?"></textarea>
+      <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 4px;">
+        ⌨️ <i>Shortcut: Press <b>Enter</b> to submit question</i>
+      </div>
 
       <div class="sample-pills">
         <span class="pill" onclick="fillQuery(this)">Category II vs Category III packaging boundary</span>
@@ -64,6 +68,12 @@
       <div style="display: flex; align-items: center; gap: 14px; margin-top: 10px;">
         <button class="btn" onclick="askQuestion()">Ask Copilot</button>
         <div class="loading-indicator" id="qaLoading">Searching statutory clauses &amp; verifying numeric claims...</div>
+      </div>
+
+      <div id="qaSkeleton" class="skeleton-loader">
+        <div class="skeleton-line med"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line short"></div>
       </div>
 
       <div id="qaOutput" class="output-box"></div>
@@ -107,27 +117,49 @@
         Introduced Packaging Volume (in Metric Tonnes / MT)
       </div>
 
+      <div class="sample-pills" style="margin-bottom: 12px;">
+        <span style="font-size: 11.5px; color: var(--text-muted); align-self: center; margin-right: 4px;">Quick Presets:</span>
+        <span class="pill" onclick="applyPreset('fmcg')">🥤 FMCG Beverage (500 MT Cat I, 180 MT Cat II)</span>
+        <span class="pill" onclick="applyPreset('ecommerce')">📦 E-Commerce / D2C (60 MT Cat I, 380 MT Cat II, 90 MT Cat III)</span>
+        <span class="pill" onclick="applyPreset('pharma')">💊 Pharma Producer (150 MT Cat I, 45 MT Cat II, 75 MT Cat III)</span>
+        <span class="pill" onclick="applyPreset('importer')">🚢 Polymer Importer (120 MT Cat I, 220 MT Cat II)</span>
+      </div>
+
       <div class="grid-4">
         <div>
-          <label style="font-size: 11.5px; color: var(--accent); display: block; margin-bottom: 4px;">Cat I: Rigid Plastics</label>
+          <label style="font-size: 11.5px; color: var(--accent); display: block; margin-bottom: 4px;">
+            Cat I: Rigid Plastics
+            <span class="tooltip-wrap"><span class="tooltip-icon">?</span><span class="tooltip-text">Rigid packaging including PET bottles, HDPE containers, drums, jars, caps, and closures.</span></span>
+          </label>
           <input type="number" id="cat1Input" placeholder="e.g. 100" value="100" min="0">
         </div>
         <div>
-          <label style="font-size: 11.5px; color: var(--accent); display: block; margin-bottom: 4px;">Cat II: Flexible Plastics</label>
+          <label style="font-size: 11.5px; color: var(--accent); display: block; margin-bottom: 4px;">
+            Cat II: Flexible Plastics
+            <span class="tooltip-wrap"><span class="tooltip-icon">?</span><span class="tooltip-text">Flexible single-layer packaging such as LDPE/LLDPE/PP films, shrink wrap, pouches, and bags.</span></span>
+          </label>
           <input type="number" id="cat2Input" placeholder="e.g. 250" value="250" min="0">
         </div>
         <div>
-          <label style="font-size: 11.5px; color: var(--accent); display: block; margin-bottom: 4px;">Cat III: Multilayered (MLP)</label>
+          <label style="font-size: 11.5px; color: var(--accent); display: block; margin-bottom: 4px;">
+            Cat III: Multilayered (MLP)
+            <span class="tooltip-wrap"><span class="tooltip-icon">?</span><span class="tooltip-text">Multi-layered packaging having at least one layer of plastic combined with foil, paper, or metal.</span></span>
+          </label>
           <input type="number" id="cat3Input" placeholder="e.g. 50" value="50" min="0">
         </div>
         <div>
-          <label style="font-size: 11.5px; color: var(--accent); display: block; margin-bottom: 4px;">Cat IV: Compostable</label>
+          <label style="font-size: 11.5px; color: var(--accent); display: block; margin-bottom: 4px;">
+            Cat IV: Compostable
+            <span class="tooltip-wrap"><span class="tooltip-icon">?</span><span class="tooltip-text">Compostable plastic certified under Indian Standard IS/ISO 17088.</span></span>
+          </label>
           <input type="number" id="cat4Input" placeholder="e.g. 10" value="10" min="0">
         </div>
       </div>
 
       <div style="display: flex; gap: 10px; flex-wrap:wrap;">
         <button class="btn" onclick="calculateObligations()">Calculate Obligations &amp; Energy Potential</button>
+        <button class="btn btn-outline" onclick="exportCSV()">📊 Export CSV</button>
+        <button class="btn btn-outline" onclick="exportFormVII()">📥 Export CPCB Form VII (.JSON)</button>
         <button class="btn btn-outline" onclick="printReport()">🖨️ Print / Save PDF Report</button>
       </div>
 
@@ -225,6 +257,13 @@
           </div>
         </div>
 
+        <div style="font-size: 12px; background: rgba(231,111,81,0.08); border-left: 3px solid #e76f51; padding: 10px 14px; border-radius: 4px; margin-top: 14px;">
+          <b style="color: #f4a261;">CPCB Escalating Environmental Compensation (EC) Rate Schedule:</b><br>
+          • <b>Year 1 Default:</b> ₹5,000 / MT (Initial statutory base fine)<br>
+          • <b>Year 2 Default:</b> ₹10,000 / MT (2× consecutive penalty multiplier)<br>
+          • <b>Year 3 Default:</b> ₹20,000 / MT (4× multiplier + prosecution under Section 15 EPA 1986)
+        </div>
+
         <div style="margin-top: 14px;">
           <div style="font-size: 13px; font-weight: 600; margin-bottom: 6px;">Category-wise Obligation Breakdown</div>
           <table id="categoryTable">
@@ -246,7 +285,26 @@
     </div>
   </div>
 
-  <!-- TAB 3: FILING & DEADLINES -->
+  <!-- TAB: QUICK COMPLIANCE CHECK (Person 3 / Hour 3) -->
+  <div id="complianceTab" class="tab-content">
+    <div class="card">
+      <div class="card-title">Quick Statutory Compliance Check by Entity</div>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+        Select your entity profile under the Plastic Waste Management Rules to inspect mandatory portal obligations, exemptions, and audit requirements.
+      </p>
+
+      <div class="sample-pills" style="margin-bottom: 16px;">
+        <span class="pill" onclick="loadQuickCompliance('Brand Owner')">🏢 Brand Owner (BO)</span>
+        <span class="pill" onclick="loadQuickCompliance('Producer')">🏭 Producer (P)</span>
+        <span class="pill" onclick="loadQuickCompliance('Importer')">🚢 Importer (I)</span>
+        <span class="pill" onclick="loadQuickCompliance('Seller')">📦 Seller of Virgin Polymers</span>
+      </div>
+
+      <div id="complianceProfileDetails">Loading compliance profile...</div>
+    </div>
+  </div>
+
+  <!-- TAB 4: FILING & DEADLINES -->
   <div id="filingTab" class="tab-content">
     <div class="card">
       <div class="card-title">Statutory Filing Deadlines &amp; Portal Checklist</div>

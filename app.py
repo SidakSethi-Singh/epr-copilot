@@ -26,6 +26,9 @@ logger = logging.getLogger("epr_copilot")
 from rag.chain import ask, get_llm_status
 from rag.calculator import get_target, get_annual_return_deadline, calculate_liability, get_rules_version
 from rag.knowledge_base import KNOWLEDGE_BASE
+from rag.parser import parse_packaging_text, get_sample_invoices
+from rag.validator import validate_packaging_artwork, get_sample_artworks
+from rag.marketplace import get_marketplace_data, optimize_procurement
 
 app = Flask(__name__)
 # 64 KB request ceiling to prevent unbounded payload DOS attacks (IMP-003)
@@ -89,6 +92,80 @@ def api_status():
 def api_rules_version():
     """Exposes current single-source-of-truth ruleset version and verification date."""
     return jsonify(get_rules_version())
+
+
+COMPLIANCE_PROFILES = {
+    "Brand Owner": {
+        "title": "Brand Owner (BO)",
+        "description": "Entity selling products under a registered brand label.",
+        "applicable_rules": [
+            "CPCB registration before placing packaging in the market",
+            "Category I–IV annual recycling targets and recycled-content mandates",
+            "Form-VII annual return by the applicable statutory deadline",
+        ],
+        "exemptions": "Confirm any MSME exemption against the current CPCB rules before relying on it.",
+        "penalties": "Environmental Compensation may escalate from ₹5,000 to ₹20,000/MT for continuing default.",
+    },
+    "Producer": {
+        "title": "Producer (P)",
+        "description": "Manufacturer or importer of carry bags, plastic sheets, or multilayered packaging.",
+        "applicable_rules": ["Common EPR Portal registration", "Audited virgin-polymer records", "Quarterly and annual traceability records"],
+        "exemptions": "Obligations depend on the registered entity and supply-chain allocation.",
+        "penalties": "Non-compliance can trigger Environmental Compensation and regulatory action.",
+    },
+    "Importer": {
+        "title": "Importer (I)",
+        "description": "Importer of plastic packaging or products packaged in plastic.",
+        "applicable_rules": ["Valid CPCB EPR registration", "Category-wise imported-volume accounting", "Form-VII filing with bill-of-entry records"],
+        "exemptions": "Confirm scope and volume treatment with current CPCB guidance.",
+        "penalties": "Non-compliance may affect clearance and incur Environmental Compensation.",
+    },
+    "Seller": {
+        "title": "Seller of Raw Virgin Polymers",
+        "description": "Entity manufacturing or trading raw plastic resin.",
+        "applicable_rules": ["Portal onboarding", "Buyer traceability", "Quarterly sales-data reporting where applicable"],
+        "exemptions": "No blanket exemption should be assumed.",
+        "penalties": "Regulatory action may include portal restrictions and prosecution.",
+    },
+}
+
+
+@app.route("/api/compliance-check/<entity>")
+def api_compliance_check(entity):
+    return jsonify(COMPLIANCE_PROFILES.get(entity, COMPLIANCE_PROFILES["Brand Owner"]))
+
+
+@app.route("/api/samples/invoices")
+def api_samples_invoices():
+    return jsonify(get_sample_invoices())
+
+
+@app.route("/api/parse_invoice", methods=["POST"])
+def api_parse_invoice():
+    data = request.get_json(force=True) or {}
+    return jsonify(parse_packaging_text(data.get("invoice_text", "")))
+
+
+@app.route("/api/samples/artworks")
+def api_samples_artworks():
+    return jsonify(get_sample_artworks())
+
+
+@app.route("/api/validate_artwork", methods=["POST"])
+def api_validate_artwork():
+    data = request.get_json(force=True) or {}
+    return jsonify(validate_packaging_artwork(data.get("artwork_text", "")))
+
+
+@app.route("/api/marketplace")
+def api_marketplace():
+    return jsonify(get_marketplace_data())
+
+
+@app.route("/api/marketplace/optimize", methods=["POST"])
+def api_marketplace_optimize():
+    data = request.get_json(force=True) or {}
+    return jsonify(optimize_procurement(data.get("obligations", {})))
 
 
 @app.route("/api/ask", methods=["POST"])
