@@ -1,0 +1,121 @@
+{
+  "ruleset_version": "2026-10-10.1",
+  "verified_on": "2026-10-10",
+  "sources": [
+    {
+      "id": "gsr133e-2022",
+      "title": "PWM Amendment Rules 2022 – Schedule II",
+      "url": "TODO_SOURCE",
+      "sha256": "TODO_SOURCE",
+      "retrieved_on": "2026-10-10"
+    },
+    {
+      "id": "cpcb-ec-2024-04-04",
+      "title": "CPCB EC guidelines (4 Apr 2024)",
+      "url": "TODO_SOURCE",
+      "sha256": "TODO_SOURCE",
+      "retrieved_on": "2026-10-10"
+    },
+    {
+      "id": "moefcc-ext-2026-08-28",
+      "title": "MoEFCC annual return extension notice",
+      "url": "TODO_SOURCE",
+      "sha256": "TODO_SOURCE",
+      "retrieved_on": "2026-10-10"
+    }
+  ],
+  "recycling_min_pct": {
+    "2024-25": {"I": 50, "II": 30, "III": 30, "IV": 50, "V": null, "status": "needs_verify", "source_ids": ["gsr133e-2022"]},
+    "2025-26": {"I": 60, "II": 40, "III": 40, "IV": 60, "V": null, "status": "needs_verify", "source_ids": ["gsr133e-2022"]},
+    "2026-27": {"I": 70, "II": 50, "III": 50, "IV": 70, "V": null, "status": "needs_verify", "source_ids": ["gsr133e-2022"]},
+    "2027-28": {"I": 80, "II": 60, "III": 60, "IV": 80, "V": null, "status": "needs_verify", "source_ids": ["gsr133e-2022"]},
+    "2028-29": {"I": 80, "II": 60, "III": 60, "IV": 80, "V": null, "status": "needs_verify", "source_ids": ["gsr133e-2022"]},
+    "_meta": {
+      "applies_to": "EPR target Q",
+      "status": "needs_verify",
+      "source_ids": ["gsr133e-2022"],
+      "cat_v_scope_note": "Category V covers biodegradable plastics; statutory recycling target pending separate CPCB notification"
+    }
+  },
+  "recycled_content_pct": {
+    "2025-26": {"I": 30, "II": 10, "III": 5, "IV": 0, "V": null, "status": "needs_verify", "source_ids": ["gsr133e-2022"]},
+    "2026-27": {"I": 40, "II": 10, "III": 5, "IV": 0, "V": null, "status": "needs_verify", "source_ids": ["gsr133e-2022"]},
+    "2027-28": {"I": 50, "II": 20, "III": 10, "IV": 0, "V": null, "status": "needs_verify", "source_ids": ["gsr133e-2022"]},
+    "2028-29": {"I": 60, "II": 20, "III": 10, "IV": 0, "V": null, "status": "needs_verify", "source_ids": ["gsr133e-2022"]},
+    "_meta": {
+      "III_basis": "weight of plastic layers only",
+      "status": "needs_verify",
+      "source_ids": ["gsr133e-2022"],
+      "cat_v_scope_note": "Category V biodegradable plastics; recycled content mandate pending separate guidelines"
+    }
+  },
+  "environmental_compensation": {
+    "inr_per_mt_by_consecutive_year": {"1": 5000, "2": 10000, "3": 20000},
+    "category_specific_rates": "UNRESOLVED",
+    "refund_pct_by_year_of_fulfilment": {"1": 75, "2": 60, "3": 40},
+    "status": "needs_verify",
+    "source_ids": ["cpcb-ec-2024-04-04"]
+  },
+  "deadlines": [
+    {
+      "fy": "2025-26",
+      "entity": "PWP",
+      "date": "2026-10-31",
+      "basis": "MoEFCC extension 2026-08-28",
+      "source_id": "moefcc-ext-2026-08-28",
+      "status": "needs_verify"
+    },
+    {
+      "fy": "2025-26",
+      "entity": "PIBO",
+      "date": "2026-12-31",
+      "basis": "MoEFCC extension 2026-08-28",
+      "source_id": "moefcc-ext-2026-08-28",
+      "status": "needs_verify"
+    }
+  ],
+  "statutory_annual_return_date": "06-30",
+  "statutory_annual_return_date_meta": {
+    "status": "needs_verify",
+    "source_ids": ["gsr133e-2022"]
+  },
+  "cert_price_ranges_inr_per_mt": {
+    "I": {
+      "low": 3500,
+      "high": 8000,
+      "status": "needs_verify",
+      "source_ids": []
+    },
+    "II": {
+      "low": 6000,
+      "high": 14000,
+      "status": "needs_verify",
+      "source_ids": []
+    },
+    "III": {
+      "low": 8000,
+      "high": 20000,
+      "status": "needs_verify",
+      "source_ids": []
+    },
+    "IV": {
+      "low": 4000,
+      "high": 10000,
+      "status": "needs_verify",
+      "source_ids": []
+    },
+    "V": {
+      "low": null,
+      "high": null,
+      "status": "needs_verify",
+      "source_ids": [],
+      "note": "Biodegradable credit market unresolved"
+    },
+    "_meta": {
+      "status": "needs_verify",
+      "source_ids": [],
+      "as_of": "2026-10-10",
+      "note": "market estimate, volatile"
+    }
+  }
+}

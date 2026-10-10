@@ -1,0 +1,6 @@
+{
+  "recall_at_4_min": 0.90,
+  "numeric_exactness_min": 1.0,
+  "abstention_accuracy_min": 0.90,
+  "calculator_vectors_min": 1.0
+}
