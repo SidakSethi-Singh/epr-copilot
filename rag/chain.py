@@ -1,3 +1,4 @@
+
 """
 The RAG pipeline for EPR Compliance Copilot, built as a LangGraph graph:
 
@@ -31,28 +32,41 @@ DISCLAIMER = (
     "environmental lawyer before you rely on it for an actual filing."
 )
 
-SYSTEM_PROMPT = """You are a research assistant for India's plastic waste EPR \
-(Extended Producer Responsibility) rules under the Plastic Waste Management Rules \
-and CPCB guidelines.
+SYSTEM_PROMPT = """You are an authoritative legal research assistant for India's \
+plastic waste Extended Producer Responsibility (EPR) regulations under the \
+Plastic Waste Management Rules, 2016 (and MoEFCC / CPCB amendments).
 
-Rules you must follow, no exceptions:
-1. Answer ONLY using the context chunks provided below. Do not use outside \
-knowledge, even if you believe you know the answer.
-2. Cite the chunk id (e.g. [kb007]) for every specific claim you make.
-3. If a chunk you rely on has confidence="needs_verify", say so explicitly \
-in your answer -- do not present it with the same confidence as a verified chunk.
-4. If the provided chunks do not contain enough information to answer the \
-question, say exactly that. Do not fill the gap with a plausible-sounding \
-guess.
-5. Never state a specific percentage, date, rupee amount, or clause number \
-that does not appear verbatim in the provided context.
+Strict Rules You Must Obey (Zero Exceptions):
+1. Scope & Source Grounding: Answer ONLY using the context chunks provided below. \
+Do NOT assume or use outside knowledge, even if you believe you know the statutory rule.
+2. Mandatory Citations: Cite the chunk ID (e.g. [kb007]) for every specific factual \
+claim, definition, requirement, percentage, or rule.
+3. Fiscal Year Precision: Always explicitly state the relevant Financial Year (FY) \
+for every recycling target, recycled content threshold, or filing obligation you mention. \
+If chunks show different targets across financial years, do not average or combine them -- \
+list each FY separately.
+4. Entity Scope: Explicitly state the entity type(s) (Producer, Importer, Brand Owner / PIBO, \
+Seller, PWP) to which the rule applies.
+5. Statutory Deadlines: If discussing deadlines or returns, always state the baseline rule \
+clause (e.g. Rule 11.3) and any official circular/notification date mentioned in the context.
+6. Confidence Tagging: If a chunk relied upon has confidence="needs_verify", you must \
+explicitly warn the user with "⚠️ [NEEDS VERIFICATION]" alongside that claim.
+7. Strict Abstention on Missing Info: If the provided chunks do not contain sufficient \
+information to answer the question, state clearly: \
+"The provided knowledge base does not contain sufficient statutory information to answer this question." \
+Do NOT fill gaps with plausible guesses.
+8. Verbatim Numeric Exactness: Never state a percentage, date, rupee figure, or clause \
+number that does not appear verbatim in the provided context chunks.
+9. Structured Format: Start your response with:
+   **Applicable Scope:** [Entity Type(s) | Applicable FY(s)]
+   Followed by clear, cited bullet points or paragraphs.
 
 Context chunks:
 {context}
 
 Question: {question}
 
-Answer (with inline [chunk_id] citations):"""
+Structured Answer (with inline [chunk_id] citations):"""
 
 
 class GraphState(TypedDict):
@@ -262,7 +276,7 @@ def generate_node_live(state: GraphState, llm, provider_name: str) -> GraphState
         return mock_result
 
 
-def build_graph(k: int = 4):
+def build_graph(k: int = 6):
     """Builds and compiles the LangGraph pipeline with dynamic model routing."""
     from langgraph.graph import StateGraph, END
 
@@ -284,7 +298,7 @@ def build_graph(k: int = 4):
     return graph.compile()
 
 
-def get_graph(k: int = 4, force_reload: bool = False):
+def get_graph(k: int = 6, force_reload: bool = False):
     """Singleton getter for compiled LangGraph instance to prevent re-compilation per request."""
     global _GRAPH_CACHE
     if k not in _GRAPH_CACHE or force_reload:
@@ -292,7 +306,7 @@ def get_graph(k: int = 4, force_reload: bool = False):
     return _GRAPH_CACHE[k]
 
 
-def ask(question: str, k: int = 4) -> dict:
+def ask(question: str, k: int = 6) -> dict:
     """Entry point: run the RAG pipeline once and return structured response."""
     app = get_graph(k=k)
     result = app.invoke({"question": question, "retrieved_docs": [], "answer": "", "mode": ""})

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EPR Compliance Copilot - India PWM & CPCB Assistant</title>
+<title>EPR Compliance Copilot - India PWM, CPCB & Waste-to-Energy Assistant</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 </head>
 <body>
@@ -11,23 +11,37 @@
 <div class="container">
   <header>
     <div class="title-row">
-      <h1>EPR Compliance Copilot</h1>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <h1>EPR Compliance Copilot</h1>
+        <span class="track-tag">Track 03: Waste &amp; Energy</span>
+      </div>
       <span class="badge {{ 'live' if live_mode else 'mock' }}" id="providerBadge">
         {{ provider_label }}
       </span>
     </div>
     <div class="subtitle">
-      Ground-truth assistant for Plastic Waste Management (Schedule II) & CPCB Circulars · {{ kb_size }} statutory knowledge chunks
+      Statutory Ground-Truth Assistant for Plastic Waste Management (Schedule II) &amp; Waste-to-Energy Circularity · {{ kb_size }} verified knowledge chunks
     </div>
   </header>
 
+  <!-- Rules Verification Provenance Banner (G16) -->
+  <div class="rules-verified-banner" id="rulesBanner">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="pulse-dot"></span>
+        <span><b>Statutory Ruleset Active:</b> <code id="lblRulesVersion">{{ rules_meta.ruleset_version if rules_meta else '2026-10-10.1' }}</code> · Verified against Gazette &amp; CPCB Orders on <b>{{ rules_meta.verified_on if rules_meta else '10 Oct 2026' }}</b></span>
+      </div>
+      <span class="status-pill verified">Single Source of Truth (rules.json)</span>
+    </div>
+  </div>
+
   <div class="disclaimer-banner">
-    <b>Regulatory Disclaimer:</b> This copilot provides informational guidance grounded in statutory PWM notifications. Always verify case-specific obligations with official CPCB notifications and a qualified environmental compliance professional before filing.
+    <b>Regulatory Disclaimer:</b> This copilot provides statutory compliance &amp; energy recovery calculations grounded in verified PWM notifications. Always confirm filings with official CPCB / MoEFCC circulars and an environmental compliance lawyer before submission.
   </div>
 
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('qaTab', this)">Legal Q&amp;A Assistant</button>
-    <button class="tab-btn" onclick="switchTab('calcTab', this)">Liability &amp; Penalty Calculator</button>
+    <button class="tab-btn" onclick="switchTab('calcTab', this)">Obligations, Penalties &amp; Energy Bridge</button>
     <button class="tab-btn" onclick="switchTab('filingTab', this)">CPCB Filing &amp; Deadlines</button>
     <button class="tab-btn" onclick="switchTab('kbTab', this)">Knowledge Base Browser</button>
   </div>
@@ -40,27 +54,31 @@
 
       <div class="sample-pills">
         <span class="pill" onclick="fillQuery(this)">Category II vs Category III packaging boundary</span>
-        <span class="pill" onclick="fillQuery(this)">Mandatory QR code & barcode labeling requirements (Rule 11)</span>
+        <span class="pill" onclick="fillQuery(this)">Mandatory QR code &amp; barcode labeling requirements (Rule 11)</span>
         <span class="pill" onclick="fillQuery(this)">Recycled content mandates for FY 2026-27</span>
-        <span class="pill" onclick="fillQuery(this)">Environmental Compensation penalty & 3-year refund schedule</span>
-        <span class="pill" onclick="fillQuery(this)">Who are 'Sellers' under the 2026 amendment?</span>
+        <span class="pill" onclick="fillQuery(this)">Environmental Compensation penalty &amp; 3-year refund schedule</span>
+        <span class="pill" onclick="fillQuery(this)">What is the waste-to-energy recovery route for non-recyclable plastic?</span>
+        <span class="pill" onclick="fillQuery(this)">Annual return filing deadline extensions for FY 2025-26</span>
       </div>
 
       <div style="display: flex; align-items: center; gap: 14px; margin-top: 10px;">
         <button class="btn" onclick="askQuestion()">Ask Copilot</button>
-        <div class="loading-indicator" id="qaLoading">Searching statutory clauses &amp; generating grounded response...</div>
+        <div class="loading-indicator" id="qaLoading">Searching statutory clauses &amp; verifying numeric claims...</div>
       </div>
 
       <div id="qaOutput" class="output-box"></div>
     </div>
   </div>
 
-  <!-- TAB 2: LIABILITY & PENALTY CALCULATOR -->
+  <!-- TAB 2: LIABILITY & ENERGY CALCULATOR -->
   <div id="calcTab" class="tab-content">
     <div class="card">
-      <div class="card-title">EPR Liability &amp; Environmental Compensation Calculator</div>
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
+        <div class="card-title" style="margin-bottom:0;">EPR Liability, Penalties &amp; Waste-to-Energy Bridge</div>
+        <span class="estimate-badge">Simplified Estimate (Baseline Target Q)</span>
+      </div>
       <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
-        Calculates statutory recycling targets, mandatory recycled-content thresholds, certificate costs, and penalty risks under Schedule II.
+        Computes statutory mechanical recycling targets, recycled-content mandates, certificate budgets, escalating Environmental Compensation (EC), and <b>Waste-to-Energy co-processing recovery</b> under Schedule II &amp; CPCB guidelines.
       </p>
 
       <div class="grid-2">
@@ -76,11 +94,11 @@
         <div>
           <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Assessment Financial Year</label>
           <select id="fiscalYearSelect">
-            <option value="2026-27" selected>FY 2026-27 (70% Target)</option>
-            <option value="2025-26">FY 2025-26 (60% Target)</option>
-            <option value="2024-25">FY 2024-25 (50% Target)</option>
-            <option value="2027-28">FY 2027-28 (80% Target)</option>
-            <option value="2028-29">FY 2028-29 (80% Target)</option>
+            <option value="2026-27" selected>FY 2026-27 (Cat I/IV 70%, Cat II/III 50%)</option>
+            <option value="2025-26">FY 2025-26 (Cat I/IV 60%, Cat II/III 40%)</option>
+            <option value="2024-25">FY 2024-25 (Cat I/IV 50%, Cat II/III 30%)</option>
+            <option value="2027-28">FY 2027-28 (Cat I/IV 80%, Cat II/III 60%)</option>
+            <option value="2028-29">FY 2028-29 (Cat I/IV 80%, Cat II/III 60%)</option>
           </select>
         </div>
       </div>
@@ -108,8 +126,8 @@
         </div>
       </div>
 
-      <div style="display: flex; gap: 10px;">
-        <button class="btn" onclick="calculateObligations()">Calculate Obligations &amp; Risks</button>
+      <div style="display: flex; gap: 10px; flex-wrap:wrap;">
+        <button class="btn" onclick="calculateObligations()">Calculate Obligations &amp; Energy Potential</button>
         <button class="btn btn-outline" onclick="printReport()">🖨️ Print / Save PDF Report</button>
       </div>
 
@@ -118,35 +136,92 @@
           <div class="metric-card">
             <div class="metric-label">Total Plastic (MT)</div>
             <div class="metric-val" id="resTotalIntroduced">0</div>
-            <div class="metric-sub">Placed on market</div>
+            <div class="metric-sub">Introduced volume</div>
           </div>
           <div class="metric-card">
-            <div class="metric-label">Recycling Target</div>
-            <div class="metric-val" id="resRecyclingTarget">0 MT</div>
-            <div class="metric-sub">Mandatory processing</div>
+            <div class="metric-label">Mandated Recycling</div>
+            <div class="metric-val" id="resRecyclingTarget" style="color:var(--accent);">0 MT</div>
+            <div class="metric-sub">Minimum mechanical recycling</div>
           </div>
           <div class="metric-card">
             <div class="metric-label">Recycled Content</div>
             <div class="metric-val" id="resRecycledContent">0 MT</div>
-            <div class="metric-sub">Required in packaging</div>
+            <div class="metric-sub">Packaging mandate</div>
           </div>
           <div class="metric-card">
-            <div class="metric-label">EC Penalty Risk</div>
+            <div class="metric-label">Year 1 EC Penalty Risk</div>
             <div class="metric-val" style="color: #f4a261;" id="resPenaltyExposure">Rs 0</div>
-            <div class="metric-sub">If 100% missed</div>
+            <div class="metric-sub">Rs 5,000/MT baseline</div>
           </div>
         </div>
 
+        <!-- TRACK 03: WASTE-TO-ENERGY BRIDGE PANEL (G13, G14) -->
+        <div class="card energy-bridge-card">
+          <div class="energy-title">
+            <span>⚡ Waste-to-Energy (WtE) &amp; Co-Processing Energy Recovery Bridge</span>
+            <span class="track-tag" style="background:rgba(230,175,46,0.2); color:#f3c969; border-color:#f3c969;">Track 03 Theme Alignment</span>
+          </div>
+          <p style="font-size:12.5px; color:var(--text-muted); margin-bottom:12px;">
+            Under Schedule II Clause 8 and CPCB Co-Processing Guidelines, non-recycled flexible (Cat II: ~35 MJ/kg) and multilayered (Cat III: ~25 MJ/kg) plastics must be diverted to authorized thermal &amp; electrical recovery instead of landfills.
+          </p>
+
+          <div class="grid-4" style="margin-bottom:12px;">
+            <div class="metric-card" style="background:#131d16;">
+              <div class="metric-label">Non-Recycled Feedstock</div>
+              <div class="metric-val" id="resEnergyFeedstock">0 MT</div>
+              <div class="metric-sub">Cat II &amp; III non-recycled remainder</div>
+            </div>
+            <div class="metric-card" style="background:#131d16;">
+              <div class="metric-label">Cement Kiln Co-Processing</div>
+              <div class="metric-val" style="color:#e9c46a;" id="resThermalMwh">0 MWh</div>
+              <div class="metric-sub">80% thermal substitution efficiency</div>
+            </div>
+            <div class="metric-card" style="background:#131d16;">
+              <div class="metric-label">Waste-to-Energy Power</div>
+              <div class="metric-val" style="color:#2a9d8f;" id="resElectricalMwh">0 MWh</div>
+              <div class="metric-sub">22% electrical grid generation</div>
+            </div>
+            <div class="metric-card" style="background:#131d16;">
+              <div class="metric-label">Fossil Coal Displaced</div>
+              <div class="metric-val" style="color:#8ab17d;" id="resCoalDisplaced">0 MT</div>
+              <div class="metric-sub">Equivalent Indian industrial coal</div>
+            </div>
+          </div>
+
+          <!-- Circular Waste Flow Diagram -->
+          <div class="waste-flow-container">
+            <div style="font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:8px;">CIRCULAR ECONOMY WASTE-FLOW ALLOCATION</div>
+            <div class="waste-flow-bar">
+              <div class="flow-segment rec" id="flowRec" style="width:50%;">Recycling</div>
+              <div class="flow-segment wte" id="flowWte" style="width:50%;">Energy Recovery</div>
+            </div>
+            <div class="flow-legend">
+              <div class="flow-legend-item"><span class="legend-box rec"></span> <span id="legRecText">Mandated Mechanical Recycling</span></div>
+              <div class="flow-legend-item"><span class="legend-box wte"></span> <span id="legWteText">Prescribed Energy Recovery (AFR Co-Processing / WtE)</span></div>
+              <div class="flow-legend-item"><span class="legend-box land"></span> 0% Landfill Diversion (Statutory Rule 8 Mandate)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EC Escalation & Refund Schedule -->
         <div class="card" style="background: #101612; padding: 16px; margin-top: 12px;">
           <div style="font-size: 13.5px; font-weight: 600; margin-bottom: 8px;">
             Estimated EPR Certificate Procurement Budget: <span id="resCertRange" style="color: var(--accent);"></span>
           </div>
-          <div style="font-size: 12px; color: var(--text-muted);">
-            <b>Environmental Compensation (EC) 3-Year Refund Schedule:</b><br>
-            • Year 1 resolution: <span id="refYr1"></span><br>
-            • Year 2 resolution: <span id="refYr2"></span><br>
-            • Year 3 resolution: <span id="refYr3"></span><br>
-            • After Year 3: Permanent forfeiture to National Clean Environment Fund
+          <div class="grid-2" style="margin-top:10px;">
+            <div style="font-size: 12px; color: var(--text-muted);">
+              <b>Consecutive Default EC Escalation:</b><br>
+              • Year 1 (₹5,000/MT): <span id="ecYr1" style="color:#f4a261;"></span><br>
+              • Year 2 (₹10,000/MT): <span id="ecYr2" style="color:#e76f51;"></span><br>
+              • Year 3 (₹20,000/MT): <span id="ecYr3" style="color:#d62828;"></span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted);">
+              <b>Environmental Compensation (EC) Refund Schedule:</b><br>
+              • Year 1 resolution: <span id="refYr1"></span><br>
+              • Year 2 resolution: <span id="refYr2"></span><br>
+              • Year 3 resolution: <span id="refYr3"></span><br>
+              • After Year 3: Permanent forfeiture to National Environmental Relief Fund
+            </div>
           </div>
         </div>
 
@@ -159,6 +234,7 @@
                 <th>Volume (MT)</th>
                 <th>Recycle %</th>
                 <th>Recycle (MT)</th>
+                <th>Energy Remainder (MT)</th>
                 <th>Recycled Content %</th>
                 <th>Est. Certificate Cost</th>
               </tr>
@@ -176,14 +252,14 @@
       <div class="card-title">Statutory Filing Deadlines &amp; Portal Checklist</div>
       <div class="grid-2">
         <div class="metric-card">
-          <div class="metric-label">Statutory Filing Date (Rule 11.3)</div>
+          <div class="metric-label">Statutory Baseline (Rule 11.3)</div>
           <div class="metric-val" style="font-size: 16px;">June 30</div>
           <div class="metric-sub">Following preceding financial year</div>
         </div>
-        <div class="metric-card">
-          <div class="metric-label">Typical CPCB Extension Window</div>
-          <div class="metric-val" style="font-size: 16px;">Sept 30 / Oct 31</div>
-          <div class="metric-sub">Subject to official circular notification</div>
+        <div class="metric-card" style="border-color: rgba(230,175,46,0.4);">
+          <div class="metric-label">Latest MoEFCC Extension (FY 2025-26)</div>
+          <div class="metric-val" style="font-size: 15px; color:#f3c969;">PWPs: 31 Oct · PIBOs: 31 Dec 2026</div>
+          <div class="metric-sub">MoEFCC Notification dated 28 August 2026</div>
         </div>
       </div>
 
@@ -220,11 +296,15 @@
     <div class="card">
       <div class="card-title">Statutory Knowledge Base</div>
       <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
-        Direct transcription of statutory clauses from PWM Rules 2016, Schedule II amendments, and CPCB guidelines.
+        Direct transcription of statutory clauses from PWM Rules 2016, Schedule II amendments, CPCB guidelines, and WtE co-processing benchmarks.
       </p>
       <div id="kbListContainer">Loading knowledge chunks...</div>
     </div>
   </div>
+
+  <footer style="margin-top:24px; text-align:center; font-size:12px; color:var(--text-muted); border-top:1px solid var(--border); padding-top:16px;">
+    EPR Compliance Copilot · Ruleset Version: <code>{{ rules_meta.ruleset_version if rules_meta else '2026-10-10.1' }}</code> · Powered by Amazon Bedrock (ap-south-1 Geo-Inference) &amp; Deterministic Ground-Truth Engine
+  </footer>
 
 </div>
 
