@@ -39,6 +39,24 @@ function switchTab(tabId, btn) {
   if (tabId === 'kbTab') loadKnowledgeBase();
 }
 
+function openCalculator() {
+  const tab = document.getElementById('calcTab');
+  const button = document.querySelector('[onclick*="calcTab"]');
+  if (tab && button) {
+    switchTab('calcTab', button);
+    tab.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function fillDemoQuestion() {
+  const input = document.getElementById('questionInput');
+  const tab = document.getElementById('qaTab');
+  const button = document.querySelector('[onclick*="qaTab"]');
+  if (input) input.value = 'What is the energy recovery route for non-recyclable plastic packaging?';
+  if (tab && button) switchTab('qaTab', button);
+  input?.focus();
+}
+
 function fillQuery(pill) {
   document.getElementById('questionInput').value = pill.innerText;
   askQuestion();
@@ -97,8 +115,9 @@ async function askQuestion() {
       });
     }
 
-    const rulesVer = data._meta ? data._meta.rules_version : '2026-10-10.1';
-    html += `<br><br><i style="color:#9aa59d;font-size:12px;">Ruleset: v${rulesVer} · ${data.disclaimer}</i>`;
+    const rulesVer = data._meta?.ruleset_version || data._meta?.rules_version || 'not supplied';
+    const disclaimer = data.disclaimer || 'Decision-support output; verify current official notices before acting.';
+    html += `<br><br><i style="color:#9aa59d;font-size:12px;">Rules snapshot: v${rulesVer} · ${disclaimer}</i>`;
     output.innerHTML = html;
     output.style.display = 'block';
   } catch (err) {
@@ -176,7 +195,7 @@ async function calculateObligations() {
       elWte.innerText = `Energy Recovery: ${wtePct}% (${wteMt} MT)`;
 
       document.getElementById('legRecText').innerText = `Mandated Mechanical Recycling: ${recMt} MT (${recPct}%)`;
-      document.getElementById('legWteText').innerText = `Prescribed Energy Recovery: ${wteMt} MT (${wtePct}%)`;
+      document.getElementById('legWteText').innerText = `Potential eligible energy feedstock: ${wteMt} MT (${wtePct}%)`;
     }
 
     const tbody = document.querySelector('#categoryTable tbody');
@@ -196,6 +215,7 @@ async function calculateObligations() {
     }
 
     document.getElementById('calcResultsSection').style.display = 'block';
+    document.getElementById('calcResultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (e) {
     alert('Error computing liability: ' + e);
   }

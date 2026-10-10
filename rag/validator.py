@@ -93,6 +93,20 @@ Manufactured in India for QuickShip D2C Logistics
 Please dispose responsibly in dry waste bin.
 Barcode: 8901234567890
 """
+    },
+    "synthetic_company": {
+        "title": "Reliance Retail JioMart FMCG Packaging Artwork (Demo Synthetic)",
+        "artwork_text": """
+Brand: JioMart Fresh / Reliance Smart Everyday
+Product: Premium Cashews (500g)
+Packaged and Marketed by: Reliance Retail Ltd., Mumbai, Maharashtra
+CPCB EPR Registration No: CPCB/PWM/BO/MH/2026/882199
+Packaging Material Type: Multi-Layer Plastic (MLP - PET/Foil/PE)
+Resin Code: Category III (7)
+Thickness: 145 Micron (Compliant with PWM Rules Amendment > 120 Microns)
+Please dispose of responsibly. Not for roadside litter.
+[Traceability QR Code embedded: https://cpcb.nic.in/epr-verify?id=CPCB/PWM/BO/MH/2026/882199]
+"""
     }
 }
 

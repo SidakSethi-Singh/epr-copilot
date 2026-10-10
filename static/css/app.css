@@ -1,5 +1,5 @@
 :root {
-  --bg: #0d120f;
+  --bg: #09110d;
   --surface: #151b17;
   --surface-hover: #1c241f;
   --border: #27332b;
@@ -25,15 +25,15 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
-  padding: 30px 20px;
+  padding: 34px 20px 48px;
   display: flex;
   justify-content: center;
 }
-.container { width: 100%; max-width: 860px; }
+.container { width: 100%; max-width: 1080px; }
 
 header { margin-bottom: 24px; }
 .title-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 6px; }
-h1 { font-size: 24px; font-weight: 600; color: #f0f4f1; }
+h1 { font-size: 25px; font-weight: 700; letter-spacing: -0.03em; color: #f0f4f1; }
 .badge {
   font-size: 11px;
   font-weight: 600;
@@ -45,6 +45,40 @@ h1 { font-size: 24px; font-weight: 600; color: #f0f4f1; }
 .badge.live { background: var(--badge-live); color: var(--badge-live-text); border: 1px solid rgba(116, 198, 157, 0.3); }
 .badge.mock { background: var(--badge-mock); color: var(--badge-mock-text); border: 1px solid rgba(243, 201, 105, 0.3); }
 .subtitle { font-size: 13px; color: var(--text-muted); }
+
+.hero-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.8fr);
+  gap: 32px;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  margin: 22px 0 16px;
+  padding: 30px;
+  border: 1px solid rgba(82, 183, 136, 0.32);
+  border-radius: 16px;
+  background: radial-gradient(circle at 88% 18%, rgba(82, 183, 136, 0.2), transparent 28%), linear-gradient(140deg, #13291d, #0d1711 64%);
+}
+.hero-panel::after {
+  content: "";
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  right: -120px;
+  bottom: -170px;
+  border: 1px solid rgba(149, 213, 178, 0.18);
+  border-radius: 50%;
+  box-shadow: 0 0 0 28px rgba(149, 213, 178, 0.04), 0 0 0 56px rgba(149, 213, 178, 0.025);
+}
+.hero-copy { position: relative; z-index: 1; }
+.eyebrow { color: #95d5b2; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 10px; }
+.hero-panel h2 { max-width: 650px; font-size: clamp(27px, 4vw, 42px); line-height: 1.08; letter-spacing: -0.045em; margin-bottom: 14px; color: #f3f7f4; }
+.hero-panel p:not(.eyebrow) { max-width: 650px; color: #b7c4bc; line-height: 1.55; font-size: 14px; }
+.hero-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px; }
+.impact-grid { position: relative; z-index: 1; display: grid; gap: 10px; }
+.impact-grid div { display: grid; grid-template-columns: 48px 1fr; align-items: center; gap: 10px; min-height: 62px; padding: 11px 13px; background: rgba(5, 16, 10, 0.42); border: 1px solid rgba(149, 213, 178, 0.16); border-radius: 10px; }
+.impact-grid strong { color: #95d5b2; font-size: 24px; text-align: center; }
+.impact-grid span { color: #d8e2dc; font-size: 12px; line-height: 1.25; }
 
 .disclaimer-banner {
   background: rgba(181, 101, 74, 0.12);
@@ -239,8 +273,8 @@ h1 { font-size: 24px; font-weight: 600; color: #f0f4f1; }
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 20px;
+  border-radius: 12px;
+  padding: 22px;
   margin-bottom: 20px;
 }
 .card-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; color: #e1e7e2; }
@@ -263,7 +297,7 @@ textarea:focus, select:focus, input:focus { border-color: var(--accent); }
   color: #ffffff;
   border: none;
   padding: 9px 20px;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -327,7 +361,7 @@ textarea:focus, select:focus, input:focus { border-color: var(--accent); }
 .metric-card {
   background: #0f1511;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 10px;
   padding: 14px;
 }
 .metric-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
@@ -488,6 +522,12 @@ footer {
   .tabs { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
   .tab-btn { padding: 8px 12px; font-size: 13px; }
   h1 { font-size: 20px; }
+  .hero-panel { grid-template-columns: 1fr; padding: 24px 20px; gap: 22px; }
+  .hero-panel h2 { font-size: 29px; }
+  .impact-grid { grid-template-columns: repeat(3, 1fr); }
+  .impact-grid div { grid-template-columns: 1fr; gap: 3px; padding: 9px 6px; text-align: center; }
+  .impact-grid strong { font-size: 20px; }
+  .impact-grid span { font-size: 10px; }
 }
 
 /* Print styles for statutory compliance report export (IMP-013) */

@@ -83,6 +83,26 @@ MATERIAL SPECIFICATION:
 - Zip-lock Multi-layer Stand-up Pouches with Aluminum Layer (Category III MLP): 90.0 MT
 TOTAL ANNUAL ESTIMATE: 395.0 MT
 """
+    },
+    "synthetic_company": {
+        "title": "Reliance Retail / JioMart Packaging Invoice (Demo Synthetic)",
+        "raw_text": """
+TAX INVOICE: RR-2026-JM-99210
+SUPPLIER: Reliance Retail Packaging Supply Chain, Mumbai
+GSTIN: 27AACCR9982H1Z5
+CLIENT: JioMart E-Commerce & Retail
+DATE: 20-09-2026
+
+DESCRIPTION OF GOODS (Q3 Allocation):
+1. Grocery Carry Bags (LDPE, 120 Microns) - 1,450.5 MT (Category II Flexible)
+2. Fresh Produce Cling Wrap / Stretch Film (PVC/PE) - 310.2 MT (Category II Flexible)
+3. Ready-to-Eat Meal Trays (Rigid PET/PP) - 525.0 MT (Category I Rigid)
+4. Branded Snack Multi-layer Pouches (BOPP/MetPET) - 890.0 MT (Category III MLP)
+5. Electronics Bubble Wrap Envelopes (PE) - 200.0 MT (Category II Flexible)
+6. Organic Brand PLA Compostable Cutlery - 150.0 MT (Category IV Compostable)
+
+TOTAL INVOICED WEIGHT: 3,525.7 MT
+"""
     }
 }
 
