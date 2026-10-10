@@ -57,6 +57,157 @@ h1 { font-size: 24px; font-weight: 600; color: #f0f4f1; }
   margin-bottom: 24px;
 }
 
+/* Track 03 Tag & Trust Banner (G16) */
+.track-tag {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: rgba(82, 183, 136, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(82, 183, 136, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rules-verified-banner {
+  background: #111a14;
+  border: 1px solid rgba(82, 183, 136, 0.3);
+  border-left: 4px solid var(--accent);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  color: #d8e2dc;
+  margin-bottom: 14px;
+}
+
+.pulse-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--accent);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); opacity: 0.7; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.7; }
+}
+
+.status-pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+.status-pill.verified {
+  background: rgba(45, 106, 79, 0.4);
+  color: #95d5b2;
+  border: 1px solid rgba(149, 213, 178, 0.3);
+}
+
+.estimate-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: rgba(244, 162, 97, 0.15);
+  color: #f4a261;
+  border: 1px solid rgba(244, 162, 97, 0.3);
+}
+
+/* Energy Recovery Bridge Panel Styles (Track 03) */
+.energy-bridge-card {
+  background: #0d1712 !important;
+  border: 1px solid rgba(233, 196, 106, 0.35) !important;
+  border-radius: 8px;
+  padding: 18px;
+  margin-top: 16px;
+}
+
+.energy-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #f4f1de;
+  margin-bottom: 8px;
+}
+
+.waste-flow-container {
+  background: #090e0b;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 10px;
+}
+
+.waste-flow-bar {
+  display: flex;
+  width: 100%;
+  height: 28px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 28px;
+}
+
+.flow-segment.rec {
+  background: #2d6a4f;
+  color: #e8f5e9;
+  transition: width 0.3s;
+}
+
+.flow-segment.wte {
+  background: #e76f51;
+  color: #fff;
+  transition: width 0.3s;
+}
+
+.flow-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.flow-legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-box { width: 12px; height: 12px; border-radius: 2px; }
+.legend-box.rec { background: #2d6a4f; }
+.legend-box.wte { background: #e76f51; }
+.legend-box.land { background: #555; }
+
+.verifier-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+.verifier-status-badge.pass {
+  background: rgba(45, 106, 79, 0.35);
+  color: #95d5b2;
+  border: 1px solid #40916c;
+}
+.verifier-status-badge.warn {
+  background: rgba(244, 162, 97, 0.2);
+  color: #f4a261;
+  border: 1px solid #f4a261;
+}
+
 /* Tabs */
 .tabs {
   display: flex;
