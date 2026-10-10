@@ -1,0 +1,147 @@
+{
+  "ruleset_version": "2026-10-10.1",
+  "verified_on": "2026-10-10",
+  "verified_by": "EPR Copilot Team (Statutory Review)",
+  "sources": [
+    {
+      "id": "gsr133e-2022",
+      "title": "Guidelines on Extended Producer Responsibility for Plastic Packaging (Schedule II), PWM Rules 2016",
+      "authority": "MoEFCC Notification G.S.R. 133(E)",
+      "date": "2022-02-16",
+      "status": "verified"
+    },
+    {
+      "id": "cpcb-ec-2024",
+      "title": "Guidelines for Assessment of Environmental Compensation on PIBOs and PWPs under PWM Rules",
+      "authority": "CPCB Centralized EPR Division",
+      "date": "2024-04-04",
+      "status": "verified"
+    },
+    {
+      "id": "moefcc-ext-2026-08",
+      "title": "Notification on Timeline Extension for Filing of Annual Returns for FY 2025-26",
+      "authority": "MoEFCC / CPCB Circular",
+      "date": "2026-08-28",
+      "status": "verified"
+    },
+    {
+      "id": "pwm-amend-2025-rule11",
+      "title": "Plastic Waste Management (Amendment) Rules, 2025 — Rule 11 QR Labeling Mandates",
+      "authority": "MoEFCC Gazette Notification",
+      "date": "2025-03-15",
+      "status": "verified"
+    },
+    {
+      "id": "cpcb-energy-coprocessing",
+      "title": "Guidelines on Co-processing in Cement Kilns & Waste-to-Energy Processing for Non-Recyclable Plastic Fractions",
+      "authority": "CPCB & Bureau of Energy Efficiency (BEE) Technical Notes",
+      "date": "2024-01-10",
+      "status": "verified"
+    }
+  ],
+  "recycling_min_pct": {
+    "2024-25": {"cat_1": 50, "cat_2": 30, "cat_3": 30, "cat_4": 50},
+    "2025-26": {"cat_1": 60, "cat_2": 40, "cat_3": 40, "cat_4": 60},
+    "2026-27": {"cat_1": 70, "cat_2": 50, "cat_3": 50, "cat_4": 70},
+    "2027-28": {"cat_1": 80, "cat_2": 60, "cat_3": 60, "cat_4": 80},
+    "2028-29": {"cat_1": 80, "cat_2": 60, "cat_3": 60, "cat_4": 80},
+    "_meta": {
+      "applies_to": "EPR collection obligation Q",
+      "source_id": "gsr133e-2022",
+      "clause": "Schedule II, Clause 7.2"
+    }
+  },
+  "recycled_content_pct": {
+    "2024-25": {"cat_1": 0, "cat_2": 0, "cat_3": 0, "cat_4": 0},
+    "2025-26": {"cat_1": 30, "cat_2": 10, "cat_3": 5, "cat_4": 0},
+    "2026-27": {"cat_1": 40, "cat_2": 10, "cat_3": 5, "cat_4": 0},
+    "2027-28": {"cat_1": 50, "cat_2": 20, "cat_3": 10, "cat_4": 0},
+    "2028-29": {"cat_1": 60, "cat_2": 20, "cat_3": 10, "cat_4": 0},
+    "_meta": {
+      "basis_cat_3": "Weight of plastic layers only",
+      "source_id": "gsr133e-2022",
+      "clause": "Schedule II, Clause 7.3"
+    }
+  },
+  "environmental_compensation": {
+    "inr_per_mt_by_consecutive_year": {
+      "1": 5000,
+      "2": 10000,
+      "3": 20000
+    },
+    "refund_schedule_pct": {
+      "1": 75,
+      "2": 60,
+      "3": 40,
+      "after_3": 0
+    },
+    "_meta": {
+      "source_id": "cpcb-ec-2024",
+      "act": "Environment (Protection) Act, 1986 Section 15"
+    }
+  },
+  "deadlines": {
+    "statutory_baseline": {
+      "date": "June 30",
+      "clause": "Schedule II, Rule 11.3",
+      "description": "Filing deadline for preceding financial year returns on CPCB portal"
+    },
+    "active_notices": [
+      {
+        "fy": "2025-26",
+        "entity": "Plastic Waste Processor (PWP)",
+        "deadline_date": "2026-10-31",
+        "basis": "MoEFCC Notification dated 28 August 2026",
+        "source_id": "moefcc-ext-2026-08"
+      },
+      {
+        "fy": "2025-26",
+        "entity": "Producer, Importer, Brand Owner (PIBO)",
+        "deadline_date": "2026-12-31",
+        "basis": "MoEFCC Notification dated 28 August 2026",
+        "source_id": "moefcc-ext-2026-08"
+      }
+    ]
+  },
+  "categories": {
+    "cat_1": {
+      "name": "Category I: Rigid Plastics",
+      "description": "Containers, bottles, jars, crates, buckets, drums, caps",
+      "cert_price_range_inr": [3500, 8000]
+    },
+    "cat_2": {
+      "name": "Category II: Flexible Plastics",
+      "description": "Single or multilayer plastic-only pouches, sachets, sheets, carry bags",
+      "cert_price_range_inr": [6000, 14000]
+    },
+    "cat_3": {
+      "name": "Category III: Multilayered Plastics (MLP)",
+      "description": "Packaging with plastic layer + at least one non-plastic layer (foil, paperboard)",
+      "cert_price_range_inr": [8000, 20000]
+    },
+    "cat_4": {
+      "name": "Category IV: Compostable Plastics",
+      "description": "Certified biodegradable sheets & carry bags conforming to IS/ISO 17088",
+      "cert_price_range_inr": [4000, 10000]
+    }
+  },
+  "energy": {
+    "description": "Scenario calculations for diverting non-recycled plastic remainder to authorized energy recovery routes (kb021)",
+    "calorific_value_mj_per_kg": {
+      "cat_1": 38.0,
+      "cat_2": 35.0,
+      "cat_3": 28.0,
+      "cat_4": 18.0
+    },
+    "route_efficiency": {
+      "coprocessing_thermal": 0.85,
+      "wte_electrical": 0.25
+    },
+    "mj_per_mwh": 3600.0,
+    "default_allocation_pct": {
+      "coprocessing_cement": 60,
+      "waste_to_energy": 40
+    },
+    "source_id": "cpcb-energy-coprocessing"
+  }
+}
