@@ -37,6 +37,8 @@ function switchTab(tabId, btn) {
   document.getElementById(tabId).classList.add('active');
   btn.classList.add('active');
   if (tabId === 'kbTab') loadKnowledgeBase();
+  if (tabId === 'leaderboardTab') loadLeaderboard();
+  if (tabId === 'roadTab') runRoadEvaluation();
 }
 
 function fillQuery(pill) {
@@ -315,3 +317,95 @@ async function loadKnowledgeBase() {
     container.innerHTML = 'Error loading knowledge base: ' + e;
   }
 }
+
+// ── Mentor Feature 1: Enterprise Leaderboard ─────────────────────────────
+let leaderboardCache = null;
+
+async function loadLeaderboard() {
+  const tbody = document.getElementById('leaderboardBody');
+  if (!tbody) return;
+  try {
+    const res = await fetch('/api/leaderboard');
+    const data = await res.json();
+    leaderboardCache = data.rankings;
+    renderLeaderboardRows(data.rankings);
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:#f4a261;">Error loading leaderboard: ${e}</td></tr>`;
+  }
+}
+
+function filterLeaderboard(filter) {
+  if (!leaderboardCache) return;
+  if (filter === 'all') {
+    renderLeaderboardRows(leaderboardCache);
+  } else if (filter === 'green') {
+    renderLeaderboardRows(leaderboardCache.filter(c => c.esg_score >= 85));
+  } else if (filter === 'red') {
+    renderLeaderboardRows(leaderboardCache.filter(c => c.esg_score < 60));
+  }
+}
+
+function renderLeaderboardRows(companies) {
+  const tbody = document.getElementById('leaderboardBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  companies.forEach((c, idx) => {
+    const isGreen = c.esg_score >= 85;
+    const isRed = c.esg_score < 60;
+    const scoreColor = isGreen ? '#74c69d' : (isRed ? '#e76f51' : '#f3c969');
+    const statusBadge = isGreen 
+      ? '<span class="citation-tag verified">Green (Compliant)</span>' 
+      : (isRed ? '<span class="citation-tag needs_verify">Red (Defaulter)</span>' : '<span class="citation-tag reported">Amber (Monitored)</span>');
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><b>#${idx + 1} ${c.name}</b><br><span style="font-size:11px;color:#9aa59d;">Reg: ${c.cpcb_reg}</span></td>
+      <td style="font-size:12px;color:#c5cdc7;">${c.sector}</td>
+      <td><b>${c.annual_plastic_mt.toLocaleString('en-IN')} MT</b></td>
+      <td>${c.recycling_achieved_pct}% (rPET: ${c.recycled_content_pct}%)</td>
+      <td><b style="color:${scoreColor};font-size:15px;">${c.esg_score}/100</b></td>
+      <td>
+        ${statusBadge}<br>
+        <span style="font-size:11.5px;color:${isRed ? '#f4a261' : '#95d5b2'};">${c.subsidy_eligible}</span>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Mentor Feature 2: Plastic Road Reuse Evaluation (IRC:SP:98) ────────────
+async function runRoadEvaluation() {
+  const polymer = document.getElementById('roadPolymerSelect')?.value || 'ldpe';
+  const tonnage = parseFloat(document.getElementById('roadTonnageInput')?.value) || 0;
+
+  try {
+    const res = await fetch('/api/road-reuse/evaluate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({polymer, tonnage})
+    });
+    const d = await res.json();
+
+    document.getElementById('roadPolymerName').innerText = d.polymer_evaluated;
+    const badge = document.getElementById('roadSuitabilityBadge');
+    if (d.is_prohibited) {
+      badge.className = 'citation-tag needs_verify';
+      badge.innerText = 'STRICTLY PROHIBITED (0% - TOXIC)';
+    } else if (d.suitability_score_pct >= 85) {
+      badge.className = 'citation-tag verified';
+      badge.innerText = `${d.suitability_status} (${d.suitability_score_pct}% Compliant)`;
+    } else {
+      badge.className = 'citation-tag reported';
+      badge.innerText = `${d.suitability_status} (${d.suitability_score_pct}%)`;
+    }
+
+    document.getElementById('roadKmPaved').innerText = d.road_impact.potential_highway_km_paved + ' km';
+    document.getElementById('roadPouchesDiverted').innerText = d.road_impact.single_use_plastics_diverted.toLocaleString('en-IN');
+    document.getElementById('roadBlendPct').innerText = d.recommended_blend_pct;
+    document.getElementById('roadEolCredit').innerText = '₹' + d.road_impact.estimated_cpcb_eol_credit_value_inr.toLocaleString('en-IN');
+    document.getElementById('roadTechnicalVerdict').innerText = d.technical_verdict;
+  } catch (e) {
+    console.warn('Road evaluation error:', e);
+  }
+}
+

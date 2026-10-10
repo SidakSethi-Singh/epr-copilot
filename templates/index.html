@@ -34,6 +34,8 @@
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('qaTab', this)">Legal Q&amp;A Assistant</button>
     <button class="tab-btn" onclick="switchTab('calcTab', this)">Liability &amp; Penalty Calculator</button>
+    <button class="tab-btn" onclick="switchTab('leaderboardTab', this)">🏢 Enterprise Leaderboard</button>
+    <button class="tab-btn" onclick="switchTab('roadTab', this)">🛣️ Plastic Road Reuse (IRC:SP:98)</button>
     <button class="tab-btn" onclick="switchTab('complianceTab', this)">Quick Compliance Check</button>
     <button class="tab-btn" onclick="switchTab('filingTab', this)">CPCB Filing &amp; Deadlines</button>
     <button class="tab-btn" onclick="switchTab('kbTab', this)">Knowledge Base Browser</button>
@@ -213,6 +215,115 @@
             </thead>
             <tbody></tbody>
           </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: REAL ENTERPRISE LEADERBOARD (Mentor Feedback) -->
+  <div id="leaderboardTab" class="tab-content">
+    <div class="card">
+      <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+        <span>🏢 Indian Enterprise ESG &amp; EPR Leaderboard</span>
+        <span class="rules-pill">SEBI BRSR &amp; CPCB Verified</span>
+      </div>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
+        Real plastic packaging benchmarks, recycling fulfillment rates, and Government subsidy vs. penalty allocations for top Indian conglomerates and manufacturing clusters.
+      </p>
+
+      <div class="sample-pills" style="margin-bottom: 14px;">
+        <span class="pill" onclick="filterLeaderboard('all')">All Companies</span>
+        <span class="pill" onclick="filterLeaderboard('green')">🟢 Green Category (Subsidy Eligible)</span>
+        <span class="pill" onclick="filterLeaderboard('red')">🔴 Red Category (25% Penalty Surcharge)</span>
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table id="leaderboardTable">
+          <thead>
+            <tr>
+              <th>Rank &amp; Company</th>
+              <th>Sector</th>
+              <th>Annual Plastic</th>
+              <th>Recycling %</th>
+              <th>ESG Score</th>
+              <th>CPCB Status &amp; Government Allocation</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboardBody">
+            <tr><td colspan="6" style="text-align:center; color:var(--text-muted);">Loading enterprise benchmarks...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top: 16px; background: rgba(38, 70, 83, 0.25); border-left: 3px solid #2a9d8f; padding: 10px 14px; border-radius: 4px; font-size: 12px; line-height: 1.5;">
+        <b>🏛️ Government Subsidy &amp; Enforcement Policy:</b><br>
+        • <b>Green Category (ESG &ge; 85):</b> Grants 5% Green Credit Subsidy on next eco-product line + 3-year fast-track SPCB Consent.<br>
+        • <b>Red Category (ESG &lt; 60):</b> Subject to 25% statutory commission surcharge fine on top of standard ₹5,000/MT Environmental Compensation.
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: PLASTIC ROAD REUSE (IRC:SP:98-2020 Mentor Feedback) -->
+  <div id="roadTab" class="tab-content">
+    <div class="card">
+      <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+        <span>🛣️ Circular Economy: Plastic Waste in Road Manufacturing</span>
+        <span class="rules-pill">IRC:SP:98-2020 Mandate</span>
+      </div>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+        Evaluate plastic waste suitability for National Highway bituminous hot mix under Indian Roads Congress (IRC) standards and compute CPCB End-of-Life (EOL) credits.
+      </p>
+
+      <div class="grid-2">
+        <div>
+          <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Select Plastic Polymer Stream</label>
+          <select id="roadPolymerSelect" onchange="runRoadEvaluation()">
+            <option value="ldpe" selected>LDPE / LLDPE Film &amp; Carry Bags (Cat II Flexible)</option>
+            <option value="mlp">Multi-Layered Plastics / MLP Pouches (Cat III Metallized)</option>
+            <option value="pp">Polypropylene (PP Woven Sacks &amp; Straps)</option>
+            <option value="hdpe">HDPE Rigid Regrind (Cat I Bottles &amp; Caps)</option>
+            <option value="pet">PET Bottles (Cat I Polyester)</option>
+            <option value="pvc">PVC Polyvinyl Chloride (Prohibited / Toxic)</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Plastic Waste Volume to Reuse (in MT)</label>
+          <input type="number" id="roadTonnageInput" value="50" min="0" oninput="runRoadEvaluation()">
+        </div>
+      </div>
+
+      <div id="roadResultCard" style="background: #101612; border: 1px solid var(--border); border-radius: 6px; padding: 16px; margin-top: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <b id="roadPolymerName" style="font-size: 15px; color: #d8f3dc;">LDPE / LLDPE (Category II Flexible)</b>
+          <span id="roadSuitabilityBadge" class="citation-tag verified">EXCELLENT (100% Compliant)</span>
+        </div>
+
+        <div class="grid-4" style="margin: 14px 0;">
+          <div class="metric-card">
+            <div class="metric-label">Highway Paved</div>
+            <div id="roadKmPaved" class="metric-val" style="color: var(--accent);">62.5 km</div>
+            <div class="metric-sub">2-Lane National Highway</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Pouches Diverted</div>
+            <div id="roadPouchesDiverted" class="metric-val">5,00,00,000</div>
+            <div class="metric-sub">From landfills / water</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Bitumen Blend %</div>
+            <div id="roadBlendPct" class="metric-val" style="font-size: 15px;">6% to 8%</div>
+            <div class="metric-sub">By wt of Bitumen (VG-30)</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">CPCB EOL Credit</div>
+            <div id="roadEolCredit" class="metric-val" style="color: #f4a261;">₹1,05,000</div>
+            <div class="metric-sub">EPR offset value</div>
+          </div>
+        </div>
+
+        <div style="font-size: 12.5px; color: #c5cdc7; line-height: 1.5; background: #0b0f0c; padding: 10px 12px; border-radius: 4px;">
+          <b>Technical Assessment (IRC:SP:98-2020):</b> <span id="roadTechnicalVerdict">Softens at coating temperature (160°C) without burning; binds perfectly with hot aggregate.</span><br>
+          <span style="color: var(--text-muted); font-size: 11.5px;">Statutory Ref: MoRTH Circular RW/NH-33044/27/2019-S&amp;R (P&amp;B) for 8% waste plastic blending.</span>
         </div>
       </div>
     </div>

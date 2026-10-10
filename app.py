@@ -28,6 +28,8 @@ from rag.knowledge_base import KNOWLEDGE_BASE
 from rag.parser import parse_packaging_text, get_sample_invoices
 from rag.validator import validate_packaging_artwork, get_sample_artworks
 from rag.marketplace import get_marketplace_data, optimize_procurement
+from rag.leaderboard import compute_leaderboard
+from rag.circular_economy import evaluate_road_reuse
 
 app = Flask(__name__)
 # 64 KB request ceiling to prevent unbounded payload DOS attacks (IMP-003)
@@ -174,6 +176,23 @@ def api_marketplace_optimize():
     data = request.get_json(force=True) or {}
     obligations = data.get("obligations", {})
     result = optimize_procurement(obligations)
+    return jsonify(result)
+
+
+@app.route("/api/leaderboard")
+def api_leaderboard():
+    return jsonify(compute_leaderboard())
+
+
+@app.route("/api/road-reuse/evaluate", methods=["POST"])
+def api_road_reuse_evaluate():
+    data = request.get_json(force=True) or {}
+    polymer = data.get("polymer", "ldpe")
+    try:
+        tonnage = float(data.get("tonnage", 0.0) or 0.0)
+    except (ValueError, TypeError):
+        tonnage = 0.0
+    result = evaluate_road_reuse(polymer, tonnage)
     return jsonify(result)
 
 
