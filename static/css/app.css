@@ -191,6 +191,154 @@ th { color: var(--text-muted); font-weight: 600; font-size: 11px; text-transform
 .checklist-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; font-size: 13.5px; line-height: 1.4; }
 .checklist-item input { margin-top: 3px; accent-color: var(--accent); }
 
+/* Person 3: Trust Indicators & Verification Badges */
+.rules-banner {
+  background: rgba(45, 106, 79, 0.18);
+  border: 1px solid rgba(82, 183, 136, 0.35);
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  color: #b7e4c7;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.rules-banner b { color: #d8f3dc; }
+.rules-pill {
+  background: #1b4332;
+  color: #74c69d;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  letter-spacing: 0.3px;
+}
+
+.verifier-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+.verifier-box.verified {
+  background: rgba(45, 106, 79, 0.35);
+  color: #95d5b2;
+  border: 1px solid rgba(82, 183, 136, 0.4);
+}
+.verifier-box.unverified {
+  background: rgba(231, 111, 81, 0.2);
+  color: #f4a261;
+  border: 1px solid rgba(244, 162, 97, 0.4);
+}
+
+.simplified-tag {
+  background: #264653;
+  color: #a8dadc;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  margin-left: 8px;
+}
+
+/* Tooltips */
+.tooltip-wrap {
+  position: relative;
+  display: inline-block;
+  cursor: help;
+}
+.tooltip-wrap .tooltip-icon {
+  font-size: 11px;
+  color: var(--accent);
+  margin-left: 4px;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.tooltip-wrap .tooltip-text {
+  visibility: hidden;
+  width: 220px;
+  background-color: #1a231d;
+  color: #e1e7e2;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  line-height: 1.35;
+  position: absolute;
+  z-index: 100;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.2s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+.tooltip-wrap:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Skeleton Loading Shimmer */
+.skeleton-loader {
+  display: none;
+  margin-top: 16px;
+  background: #111713;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px;
+}
+.skeleton-line {
+  height: 14px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #18221b 25%, #253329 50%, #18221b 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+.skeleton-line.short { width: 45%; }
+.skeleton-line.med { width: 75%; }
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Footer */
+footer {
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Responsive Mobile Layout */
+@media (max-width: 650px) {
+  body { padding: 15px 10px; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .grid-4 { grid-template-columns: 1fr 1fr; }
+  .tabs { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  .tab-btn { padding: 8px 12px; font-size: 13px; }
+  h1 { font-size: 20px; }
+}
+
 /* Print styles for statutory compliance report export (IMP-013) */
 @media print {
   body {
@@ -199,7 +347,7 @@ th { color: var(--text-muted); font-weight: 600; font-size: 11px; text-transform
     padding: 0 !important;
   }
   .container { max-width: 100% !important; }
-  .tabs, .sample-pills, .btn, textarea, select, input, .loading-indicator, #providerBadge {
+  .tabs, .sample-pills, .btn, textarea, select, input, .loading-indicator, #providerBadge, .rules-banner, .skeleton-loader {
     display: none !important;
   }
   .card, .metric-card {
