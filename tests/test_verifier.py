@@ -1,59 +1,109 @@
-"""
-Unit tests for the post-generation numeric and statutory verifier (rag/verifier.py).
-"""
-
 import pytest
-from rag.verifier import extract_statutory_claims, verify_answer
-from rag.knowledge_base import KNOWLEDGE_BASE
+from rag.verifier import verify_answer
 
+def test_grounded_answer_passes():
+    chunks = [
+        {
+            "id": "kb007",
+            "title": "Recycling Targets",
+            "citation": "Schedule II, Clause 7",
+            "clause": "Clause 7.2",
+            "text": "For FY 2026-27, recycling target for Category I is 70% under Schedule II.",
+            "confidence": "verified",
+        }
+    ]
+    answer = "Under Schedule II, Category I has a recycling target of 70% for 2026-27 [kb007]."
+    res = verify_answer(answer, chunks)
+    assert res["verified"] is True
+    assert res["ungrounded"] == []
+    assert res["invalid_citations"] == []
+    assert res["needs_verify_flagged"] is True
 
-def test_extract_statutory_claims():
-    text = (
-        "Category I rigid plastics have a 70% recycling target in FY 2026-27 under Rule 11.3. "
-        "The penalty under Section 15 of EPA 1986 is Rs 5,000 per MT. "
-        "Carry bags must be at least 120 microns. Deadline is October 31, 2026."
-    )
-    claims = extract_statutory_claims(text)
-    claim_texts = [c["claim"] for c in claims]
+def test_invented_percentage_fails():
+    chunks = [
+        {
+            "id": "kb007",
+            "title": "Recycling Targets",
+            "citation": "Schedule II",
+            "text": "Target is 70%.",
+            "confidence": "verified",
+        }
+    ]
+    answer = "The target is 95% [kb007]."
+    res = verify_answer(answer, chunks)
+    assert res["verified"] is False
+    assert any("95%" in u for u in res["ungrounded"])
 
-    assert any("70%" in c for c in claim_texts)
-    assert any("Rs 5,000" in c or "5,000" in c for c in claim_texts)
-    assert any("Rule 11.3" in c for c in claim_texts)
-    assert any("Section 15" in c for c in claim_texts)
-    assert any("120 microns" in c for c in claim_texts)
-    assert any("October 31" in c for c in claim_texts)
+def test_invented_date_fails():
+    chunks = [
+        {
+            "id": "kb014",
+            "title": "Deadlines",
+            "citation": "MoEFCC Order",
+            "text": "The deadline is 2026-10-31.",
+            "confidence": "verified",
+        }
+    ]
+    answer = "The deadline is 2030-12-31 [kb014]."
+    res = verify_answer(answer, chunks)
+    assert res["verified"] is False
+    assert any("2030-12-31" in u for u in res["ungrounded"])
 
+def test_fake_citation_fails():
+    chunks = [
+        {
+            "id": "kb001",
+            "title": "General Scope",
+            "citation": "Rules",
+            "text": "Scope includes producers.",
+            "confidence": "verified",
+        }
+    ]
+    answer = "Scope includes producers [kb999]."
+    res = verify_answer(answer, chunks)
+    assert res["verified"] is False
+    assert "kb999" in res["invalid_citations"]
 
-def test_verify_answer_grounded_pass():
-    # Use chunk kb007 text as cited context
-    kb007 = next(c for c in KNOWLEDGE_BASE if c["id"] == "kb007")
+def test_indian_format_amount_matches():
+    chunks = [
+        {
+            "id": "kb013",
+            "title": "EC Rates",
+            "citation": "CPCB Guidelines",
+            "text": "The penalty for year 2 is Rs 100000 per MT.",
+            "confidence": "verified",
+        }
+    ]
+    answer = "The penalty is ₹1,00,000 per MT [kb013]."
+    res = verify_answer(answer, chunks)
+    assert res["verified"] is True
+    assert res["ungrounded"] == []
 
-    grounded_answer = (
-        "For Category I rigid plastics, the mandatory recycling target is 70% in FY 2026-27 [kb007]. "
-        "In FY 2027-28 onwards, it rises to 80%."
-    )
-    res = verify_answer(grounded_answer, [kb007])
-    assert res["is_verified"] is True
-    assert res["status"] == "verified"
-    assert len(res["ungrounded_claims"]) == 0
+def test_missing_needs_verify_flag_fails():
+    chunks = [
+        {
+            "id": "kb015",
+            "title": "Market Prices",
+            "citation": "CPCB Report",
+            "text": "Credit prices range between 3500 and 8000.",
+            "confidence": "needs_verify",
+        }
+    ]
+    answer_without_flag = "Credit prices are 3500 [kb015]."
+    res_fail = verify_answer(answer_without_flag, chunks)
+    assert res_fail["verified"] is False
+    assert res_fail["needs_verify_flagged"] is False
 
+    answer_with_flag = "Credit prices are 3500 [kb015]. Note: this source is unverified and needs verification."
+    res_pass = verify_answer(answer_with_flag, chunks)
+    assert res_pass["verified"] is True
+    assert res_pass["needs_verify_flagged"] is True
 
-def test_verify_answer_ungrounded_caught():
-    kb007 = next(c for c in KNOWLEDGE_BASE if c["id"] == "kb007")
+def test_empty_answer_fails():
+    chunks = [{"id": "kb001", "text": "Some text", "confidence": "verified"}]
+    res = verify_answer("", chunks)
+    assert res["verified"] is False
+    assert res["ungrounded"] == ["empty_answer"]
 
-    # Fabricate an ungrounded target (e.g. 99% or Rs 99,999)
-    hallucinated_answer = (
-        "Under Schedule II, Category I rigid plastics have a 99% target in 2026-27 [kb007], "
-        "and non-compliance fine is Rs 99,000 per MT."
-    )
-    res = verify_answer(hallucinated_answer, [kb007])
-    assert res["is_verified"] is False
-    assert res["status"] == "unverified"
-    assert len(res["ungrounded_claims"]) > 0
-    assert any("99%" in u for u in res["ungrounded_claims"])
-
-
-def test_verify_empty_or_no_claims():
-    res = verify_answer("This is a general statement without specific figures.", [KNOWLEDGE_BASE[0]])
-    assert res["is_verified"] is True
-    assert res["checked_claims_count"] == 0
+    res_spaces = verify_answer("   ", chunks)
+    assert res_spaces["verified"] is False
