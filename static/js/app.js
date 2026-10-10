@@ -56,6 +56,8 @@ async function askQuestion() {
   }
 }
 
+let lastCalcResult = null;
+
 async function calculateObligations() {
   const piboType = document.getElementById('piboType').value;
   const fiscalYear = document.getElementById('fiscalYearSelect').value;
@@ -73,6 +75,7 @@ async function calculateObligations() {
       body: JSON.stringify({pibo_type: piboType, fiscal_year: fiscalYear, tonnages})
     });
     const data = await res.json();
+    lastCalcResult = data;
 
     document.getElementById('resTotalIntroduced').innerText = data.total_introduced_packaging_mt + ' MT';
     document.getElementById('resRecyclingTarget').innerText = data.total_recycling_obligation_mt + ' MT';
@@ -103,6 +106,73 @@ async function calculateObligations() {
   } catch (e) {
     alert('Error computing liability: ' + e);
   }
+}
+
+function applyPreset(presetType) {
+  const presets = {
+    fmcg: { pibo: 'Brand Owner', cat1: 500, cat2: 180, cat3: 40, cat4: 0 },
+    ecommerce: { pibo: 'Brand Owner', cat1: 60, cat2: 380, cat3: 90, cat4: 0 },
+    pharma: { pibo: 'Producer', cat1: 150, cat2: 45, cat3: 75, cat4: 10 },
+    importer: { pibo: 'Importer', cat1: 120, cat2: 220, cat3: 30, cat4: 0 }
+  };
+
+  const p = presets[presetType];
+  if (!p) return;
+
+  document.getElementById('piboType').value = p.pibo;
+  document.getElementById('cat1Input').value = p.cat1;
+  document.getElementById('cat2Input').value = p.cat2;
+  document.getElementById('cat3Input').value = p.cat3;
+  document.getElementById('cat4Input').value = p.cat4;
+
+  calculateObligations();
+}
+
+function exportFormVII() {
+  if (!lastCalcResult) {
+    calculateObligations().then(() => downloadFormVIIJSON());
+  } else {
+    downloadFormVIIJSON();
+  }
+}
+
+function downloadFormVIIJSON() {
+  if (!lastCalcResult) return;
+  const payload = {
+    cpcb_portal_spec: "Form-VII Annual Return (Rule 13 PWM Rules 2016)",
+    generated_at: new Date().toISOString(),
+    filing_entity: {
+      pibo_type: lastCalcResult.pibo_type,
+      assessment_year: lastCalcResult.fiscal_year,
+      statutory_deadline: "June 30",
+    },
+    introduced_packaging_mt: {
+      category_1_rigid: lastCalcResult.categories.cat_1.introduced_mt,
+      category_2_flexible: lastCalcResult.categories.cat_2.introduced_mt,
+      category_3_multilayer: lastCalcResult.categories.cat_3.introduced_mt,
+      category_4_compostable: lastCalcResult.categories.cat_4.introduced_mt,
+      total_mt: lastCalcResult.total_introduced_packaging_mt
+    },
+    statutory_obligations_mt: {
+      recycling_obligation: lastCalcResult.total_recycling_obligation_mt,
+      recycled_content_required: lastCalcResult.total_recycled_content_required_mt
+    },
+    compliance_exposure: {
+      potential_ec_penalty_inr: lastCalcResult.potential_ec_penalty_exposure_inr,
+      cert_budget_min_inr: lastCalcResult.estimated_cert_procurement_cost_range_inr.min,
+      cert_budget_max_inr: lastCalcResult.estimated_cert_procurement_cost_range_inr.max
+    }
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `CPCB_Form_VII_Annual_Return_${lastCalcResult.fiscal_year}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function printReport() {

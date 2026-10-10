@@ -89,6 +89,14 @@
         Introduced Packaging Volume (in Metric Tonnes / MT)
       </div>
 
+      <div class="sample-pills" style="margin-bottom: 12px;">
+        <span style="font-size: 11.5px; color: var(--text-muted); align-self: center; margin-right: 4px;">Quick Presets:</span>
+        <span class="pill" onclick="applyPreset('fmcg')">🥤 FMCG Beverage (500 MT Cat I, 180 MT Cat II)</span>
+        <span class="pill" onclick="applyPreset('ecommerce')">📦 E-Commerce / D2C (60 MT Cat I, 380 MT Cat II, 90 MT Cat III)</span>
+        <span class="pill" onclick="applyPreset('pharma')">💊 Pharma Producer (150 MT Cat I, 45 MT Cat II, 75 MT Cat III)</span>
+        <span class="pill" onclick="applyPreset('importer')">🚢 Polymer Importer (120 MT Cat I, 220 MT Cat II)</span>
+      </div>
+
       <div class="grid-4">
         <div>
           <label style="font-size: 11.5px; color: var(--accent); display: block; margin-bottom: 4px;">Cat I: Rigid Plastics</label>
@@ -108,8 +116,9 @@
         </div>
       </div>
 
-      <div style="display: flex; gap: 10px;">
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
         <button class="btn" onclick="calculateObligations()">Calculate Obligations &amp; Risks</button>
+        <button class="btn btn-outline" onclick="exportFormVII()">📥 Export CPCB Form VII (.JSON)</button>
         <button class="btn btn-outline" onclick="printReport()">🖨️ Print / Save PDF Report</button>
       </div>
 

@@ -45,10 +45,15 @@ Browser  -->  Flask API (ECS Fargate / App Runner)  -->  LangGraph Pipeline (rag
 ### 1. Setup Environment
 ```bash
 # Create virtual environment
-python3 -m venv .venv
+python -m venv .venv
 
-# Activate environment
+# Activate environment:
+# On Linux / macOS:
 source .venv/bin/activate
+# On Windows (PowerShell):
+.venv\Scripts\Activate.ps1
+# On Windows (Command Prompt):
+.venv\Scripts\activate.bat
 
 # Install dependencies
 pip install -r requirements.txt pytest
@@ -57,7 +62,10 @@ pip install -r requirements.txt pytest
 ### 2. Configure API Key (Optional for Live Mode)
 Copy `.env.example` to `.env`:
 ```bash
+# On Linux / macOS:
 cp .env.example .env
+# On Windows (PowerShell):
+Copy-Item .env.example .env
 ```
 
 Add your preferred key:
