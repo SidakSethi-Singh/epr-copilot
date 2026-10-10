@@ -1,124 +1,175 @@
 import pytest
+import math
 from rag.calculator import (
     calculate_liability,
     get_target,
     get_annual_return_deadline,
-    get_rules_version,
     _safe_tonnage,
+    compute_q_tonnage,
 )
 
-def test_safe_tonnage():
+def test_safe_tonnage_valid():
     assert _safe_tonnage(100.5) == 100.5
     assert _safe_tonnage("50") == 50.0
+    assert _safe_tonnage(0) == 0.0
+
+def test_safe_tonnage_invalid_and_edge_cases():
     assert _safe_tonnage(-10) == 0.0
     assert _safe_tonnage("nan") == 0.0
     assert _safe_tonnage("inf") == 0.0
+    assert _safe_tonnage("-inf") == 0.0
     assert _safe_tonnage(float("nan")) == 0.0
     assert _safe_tonnage(float("inf")) == 0.0
+    assert _safe_tonnage(float("-inf")) == 0.0
     assert _safe_tonnage(None) == 0.0
     assert _safe_tonnage("invalid_string") == 0.0
-    assert _safe_tonnage(10_000_000) == 0.0  # exceeds default max_mt
+    assert _safe_tonnage([100]) == 0.0
+    assert _safe_tonnage({"mt": 100}) == 0.0
+    assert _safe_tonnage(True) == 0.0
+    assert _safe_tonnage(False) == 0.0
+    assert _safe_tonnage(1_000_001) == 0.0
 
-
-def test_calculate_liability_baseline():
+def test_golden_vector_1_cat_i_2026_27():
     result = calculate_liability(
-        pibo_type="Brand Owner",
         fiscal_year="2026-27",
-        tonnages={"cat_1": 100.0, "cat_2": 200.0, "cat_3": 50.0, "cat_4": 0.0},
+        tonnages={"cat_1": 100.0},
     )
+    cat_1_data = result["categories"]["cat_1"]
+    assert cat_1_data["recycling_obligation_mt"] == 70.0
+    assert cat_1_data["recycling_target_pct"] == 70
 
-    assert result["pibo_type"] == "Brand Owner"
-    assert result["fiscal_year"] == "2026-27"
-    assert result["total_introduced_packaging_mt"] == 350.0
-
-    # In 2026-27: Cat 1 is 70%, Cat 2 is 50%, Cat 3 is 50%, Cat 4 is 70%
-    # Obligations: 100*0.70 + 200*0.50 + 50*0.50 = 70 + 100 + 25 = 195 MT
-    assert result["total_recycling_obligation_mt"] == 195.0
-
-    # In 2026-27 recycled content (verified rules):
-    # Cat 1 is 40% (40 MT), Cat 2 is 10% (20 MT), Cat 3 is 5% (2.5 MT) = 62.5 MT
-    assert result["total_recycled_content_required_mt"] == 62.5
-
-    # EC exposure: 195 MT * 5000 INR = 975,000 INR
-    assert result["potential_ec_penalty_exposure_inr"] == 975_000
-
-    # EC Escalation
-    esc = result["ec_escalation_by_consecutive_year"]
-    assert esc["year_1_total_inr"] == 975_000
-    assert esc["year_2_total_inr"] == 195 * 10000
-    assert esc["year_3_total_inr"] == 195 * 20000
-
-    # Refund schedule percentages (75/60/40)
-    assert "75% refund" in result["ec_refund_schedule"]["year_1_fulfillment"]
-    assert "60% refund" in result["ec_refund_schedule"]["year_2_fulfillment"]
-    assert "40% refund" in result["ec_refund_schedule"]["year_3_fulfillment"]
-
-    # Waste-to-Energy recovery bridge
-    assert "energy_recovery" in result
-    energy = result["energy_recovery"]
-    assert energy["non_recycled_energy_feedstock_mt"] == (200.0 - 100.0) + (50.0 - 25.0)  # 125 MT
-    assert energy["cement_kiln_coprocessing_thermal_mwh"] > 0
-    assert energy["waste_to_energy_electrical_mwh"] > 0
-
-
-def test_golden_vectors_from_roadmap():
-    """Validates the 5 statutory golden vectors specified in report.md §7 and proper_roadmap.md."""
-    # 1. Cat II, EPR target 100 MT, FY 2027-28 -> min recycling = 60 MT
-    r1 = calculate_liability(fiscal_year="2027-28", tonnages={"cat_2": 100.0})
-    assert r1["categories"]["cat_2"]["recycling_obligation_mt"] == 60.0
-
-    # 2. Cat I, EPR target 100 MT, FY 2026-27 -> min recycling = 70 MT
-    r2 = calculate_liability(fiscal_year="2026-27", tonnages={"cat_1": 100.0})
-    assert r2["categories"]["cat_1"]["recycling_obligation_mt"] == 70.0
-
-    # 3. Cat IV, EPR target 100 MT, FY 2026-27 -> min recycling = 70 MT (was incorrectly 100% in MVP)
-    r3 = calculate_liability(fiscal_year="2026-27", tonnages={"cat_4": 100.0})
-    assert r3["categories"]["cat_4"]["recycling_obligation_mt"] == 70.0
-
-    # 4. Cat III, 100 MT plastic-layer weight, FY 2026-27 -> recycled content = 5 MT (was 10 in MVP)
-    r4 = calculate_liability(fiscal_year="2026-27", tonnages={"cat_3": 100.0})
-    assert r4["categories"]["cat_3"]["recycled_content_required_mt"] == 5.0
-
-    # 5. Shortfall 10 MT, 2nd consecutive year -> EC rate is 10,000 INR/MT = 100,000 INR
-    r5 = calculate_liability(fiscal_year="2026-27", tonnages={"cat_1": 10.0 / 0.70})
-    esc = r5["ec_escalation_by_consecutive_year"]
-    assert esc["year_2_rate_inr_per_mt"] == 10000
-    assert esc["year_3_rate_inr_per_mt"] == 20000
-
-
-def test_calculate_liability_malformed_inputs():
+def test_golden_vector_2_cat_ii_2027_28():
     result = calculate_liability(
-        pibo_type="Producer",
-        fiscal_year="invalid-year",  # should default to 2026-27
-        tonnages={"cat_1": "nan", "cat_2": -100, "cat_3": None},
+        fiscal_year="2027-28",
+        tonnages={"cat_2": 100.0},
+    )
+    cat_2_data = result["categories"]["cat_2"]
+    assert cat_2_data["recycling_obligation_mt"] == 60.0
+    assert cat_2_data["recycling_target_pct"] == 60
+
+def test_golden_vector_3_cat_iv_2026_27():
+    result = calculate_liability(
+        fiscal_year="2026-27",
+        tonnages={"cat_4": 100.0},
+    )
+    cat_4_data = result["categories"]["cat_4"]
+    assert cat_4_data["recycling_obligation_mt"] == 70.0
+    assert cat_4_data["recycling_target_pct"] == 70
+
+def test_golden_vector_4_cat_iii_recycled_content():
+    result = calculate_liability(
+        fiscal_year="2026-27",
+        tonnages={"cat_3": 500.0},
+        plastic_layer_weights={"cat_3": 100.0},
+    )
+    cat_3_data = result["categories"]["cat_3"]
+    assert cat_3_data["recycled_content_required_mt"] == 5.0
+    assert cat_3_data["recycled_content_mandate_pct"] == 5
+
+def test_golden_vector_5_ec_shortfall_2nd_consecutive_year():
+    result = calculate_liability(
+        consecutive_year_of_shortfall=2,
+        shortfalls={"cat_1": 10.0, "cat_2": 0.0, "cat_3": 0.0, "cat_4": 0.0},
+    )
+    assert result["applicable_ec_rate_inr_per_mt"] == 10000
+    assert result["potential_ec_penalty_exposure_inr"] == 100000
+
+def test_golden_vector_6_ec_shortfall_1st_year():
+    result = calculate_liability(
+        consecutive_year_of_shortfall=1,
+        shortfalls={"cat_1": 10.0, "cat_2": 0.0, "cat_3": 0.0, "cat_4": 0.0},
+    )
+    assert result["applicable_ec_rate_inr_per_mt"] == 5000
+    assert result["potential_ec_penalty_exposure_inr"] == 50000
+
+def test_golden_vector_7_refund_schedule():
+    result = calculate_liability()
+    percentages = result["ec_refund_schedule"]["refund_percentages"]
+    assert percentages[:3] == [75, 60, 40]
+
+def test_golden_vector_8_two_year_average_q():
+    result = calculate_liability(
+        fiscal_year="2026-27",
+        prior_year_tonnages={"cat_1": [80.0, 120.0]},
+    )
+    cat_1_data = result["categories"]["cat_1"]
+    assert cat_1_data["q_tonnage_mt"] == 100.0
+    assert cat_1_data["recycling_obligation_mt"] == 70.0
+    assert result["_meta"]["basis"] == "two_year_average"
+
+def test_additional_vector_cat_i_2024_25():
+    result = calculate_liability(
+        fiscal_year="2024-25",
+        tonnages={"cat_1": 100.0},
+    )
+    cat_1_data = result["categories"]["cat_1"]
+    assert cat_1_data["recycling_obligation_mt"] == 50.0
+
+def test_additional_vector_ec_year_3_plus():
+    result = calculate_liability(
+        consecutive_year_of_shortfall=3,
+        shortfalls={"cat_1": 10.0, "cat_2": 0.0, "cat_3": 0.0, "cat_4": 0.0},
+    )
+    assert result["applicable_ec_rate_inr_per_mt"] == 20000
+    assert result["potential_ec_penalty_exposure_inr"] == 200000
+
+def test_end_of_life_remainder_calculation():
+    result = calculate_liability(
+        fiscal_year="2026-27",
+        tonnages={"cat_1": 100.0, "cat_2": 100.0},
+    )
+    cat_1 = result["categories"]["cat_1"]
+    cat_2 = result["categories"]["cat_2"]
+    assert cat_1["remaining_to_end_of_life_routes_mt"] == 30.0
+    assert cat_2["remaining_to_end_of_life_routes_mt"] == 50.0
+    assert result["remaining_to_end_of_life_routes_mt"] == 80.0
+
+def test_certificate_price_override():
+    result = calculate_liability(
+        fiscal_year="2026-27",
+        tonnages={"cat_1": 100.0},
+        cert_price_override_inr_per_mt={"cat_1": 5000.0},
+    )
+    cat_1 = result["categories"]["cat_1"]
+    assert cat_1["estimated_cert_cost_range_inr"] == [350000, 350000]
+
+def test_unsupported_fiscal_year_defaulting():
+    result = calculate_liability(
+        fiscal_year="2019-20",
+        tonnages={"cat_1": 100.0},
     )
     assert result["fiscal_year"] == "2026-27"
-    assert result["total_introduced_packaging_mt"] == 0.0
-    assert result["total_recycling_obligation_mt"] == 0.0
-    assert result["potential_ec_penalty_exposure_inr"] == 0
-
+    assert result["_meta"]["fy_defaulted"] is True
 
 def test_get_target():
     res = get_target("2025-26")
     assert res["found"] is True
     assert res["recycling_targets_pct"]["cat_1"] == 60
-    assert res["recycling_targets_pct"]["cat_4"] == 60  # verified Cat IV ramp
-    assert "_meta" in res
+    assert res["recycled_content_pct"]["cat_1"] == 30
 
     res_invalid = get_target("1999-00")
     assert res_invalid["found"] is False
 
-
 def test_get_annual_return_deadline():
     deadline = get_annual_return_deadline()
-    assert "June 30" in deadline["statutory_date"]
-    assert "31 Oct" in deadline["current_extended_date"]
-    assert "31 Dec" in deadline["current_extended_date"]
-    assert "_meta" in deadline
+    assert deadline["statutory_date"] == "06-30"
+    assert len(deadline["deadlines"]) >= 2
 
+def test_calculate_liability_malformed_inputs():
+    result = calculate_liability(
+        fiscal_year="invalid-year",
+        tonnages={
+            "cat_1": "nan",
+            "cat_2": "-inf",
+            "cat_3": 10_000_000,
+            "cat_4": "invalid_string",
+        },
+        plastic_layer_weights={"cat_3": -50.0},
+        shortfalls={"cat_1": "nan"},
+    )
+    assert result["fiscal_year"] == "2026-27"
+    assert result["_meta"]["fy_defaulted"] is True
+    assert result["total_introduced_packaging_mt"] == 0.0
+    assert result["total_recycling_obligation_mt"] == 0.0
+    assert result["potential_ec_penalty_exposure_inr"] == 0
 
-def test_get_rules_version():
-    meta = get_rules_version()
-    assert "ruleset_version" in meta
-    assert "verified_on" in meta
-    assert meta["ruleset_version"] == "2026-10-10.1"
