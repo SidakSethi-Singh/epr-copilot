@@ -34,6 +34,7 @@
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('qaTab', this)">Legal Q&amp;A Assistant</button>
     <button class="tab-btn" onclick="switchTab('calcTab', this)">Liability &amp; Penalty Calculator</button>
+    <button class="tab-btn" onclick="switchTab('auditTab', this)">📋 Manifest Audit &amp; Resolution</button>
     <button class="tab-btn" onclick="switchTab('leaderboardTab', this)">🏢 Enterprise Leaderboard</button>
     <button class="tab-btn" onclick="switchTab('roadTab', this)">🛣️ Plastic Road Reuse (IRC:SP:98)</button>
     <button class="tab-btn" onclick="switchTab('complianceTab', this)">Quick Compliance Check</button>
@@ -324,6 +325,120 @@
         <div style="font-size: 12.5px; color: #c5cdc7; line-height: 1.5; background: #0b0f0c; padding: 10px 12px; border-radius: 4px;">
           <b>Technical Assessment (IRC:SP:98-2020):</b> <span id="roadTechnicalVerdict">Softens at coating temperature (160°C) without burning; binds perfectly with hot aggregate.</span><br>
           <span style="color: var(--text-muted); font-size: 11.5px;">Statutory Ref: MoRTH Circular RW/NH-33044/27/2019-S&amp;R (P&amp;B) for 8% waste plastic blending.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: MANIFEST COMPLIANCE & PENALTY RESOLUTION ENGINE -->
+  <div id="auditTab" class="tab-content">
+    <div class="card">
+      <div class="card-title" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+        <span>📋 Manifest Compliance &amp; Penalty Resolution Engine</span>
+        <span class="simplified-tag">Deterministic Statutory Engine</span>
+      </div>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+        Inspects waste manifests against CPCB Schedule II recycling targets and the MoEFCC Green Credit Rules, 2023. Calculates Green Credits for surplus utilization or computes tiered Environmental Compensation (EC) fines and formal suspension payloads for defaults.
+      </p>
+
+      <div class="sample-pills" style="margin-bottom: 16px;">
+        <span class="pill" onclick="loadSampleManifest('fmcg_compliant')">🟢 FMCG Compliant (Surplus Credits)</span>
+        <span class="pill" onclick="loadSampleManifest('retail_warning')">🟡 Retail Warning (Shortfall &lt; 25%)</span>
+        <span class="pill" onclick="loadSampleManifest('msme_penalized')">🔴 MSME Default (Tier 3 Suspension)</span>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Company Registration ID</label>
+          <input type="text" id="auditCompanyId" value="CPCB-MH-BO-2024-9102" style="margin-bottom: 12px;">
+        </div>
+        <div>
+          <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Company / Entity Legal Name</label>
+          <input type="text" id="auditCompanyName" value="Bharat Beverages &amp; Snacks Ltd" style="margin-bottom: 12px;">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Manifest Packaging Introduced (MT)</label>
+          <input type="number" id="auditTotalIntroduced" value="1200" min="0.1" step="0.1" style="margin-bottom: 12px;">
+        </div>
+        <div>
+          <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Waste Utilized / Recycled (MT)</label>
+          <input type="number" id="auditWasteUtilized" value="960" min="0" step="0.1" style="margin-bottom: 12px;">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Mandated Target Threshold (%)</label>
+          <input type="number" id="auditMandatedPct" value="70" min="1" max="100" style="margin-bottom: 12px;">
+        </div>
+        <div>
+          <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Consecutive Default History</label>
+          <select id="auditDefaultYear" style="margin-bottom: 12px;">
+            <option value="1">Year 1 (Initial Statutory Audit)</option>
+            <option value="2">Year 2 (Repeat Shortfall - Escalated)</option>
+            <option value="3">Year 3 (Persistent Default - 25% Surcharge)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap;">
+        <button class="btn" onclick="runAuditEvaluation()">⚖️ Evaluate Manifest Compliance</button>
+        <button class="btn" style="background: #264653;" onclick="exportAuditResultJSON()">📥 Export Audit JSON</button>
+        <button class="btn" style="background: #344e41;" onclick="printAuditNotice()">📄 Print Notice</button>
+      </div>
+    </div>
+
+    <!-- Audit Result Card -->
+    <div id="auditResultContainer" class="card" style="display: none; border-color: #386641;">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 14px;">
+        <div>
+          <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted);" id="auditEntityMeta">CPCB-MH-BO-2024-9102</span>
+          <h2 style="font-size: 18px; color: #f0f4f1; margin-top: 2px;" id="auditEntityName">Bharat Beverages &amp; Snacks Ltd</h2>
+        </div>
+        <div>
+          <span id="auditStatusBadge" class="badge" style="font-size: 13px; padding: 6px 14px;">COMPLIANT</span>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom: 16px;">
+        <div class="metric-card">
+          <div class="metric-label">Utilization vs Mandated Threshold</div>
+          <div id="auditUtilizationMetric" class="metric-val" style="font-size: 20px; color: #52b788;">80.0% <span style="font-size: 13px; color: var(--text-muted);">/ 70% Target</span></div>
+          <div id="auditTonnageMetric" class="metric-sub">Utilized: 960 MT | Mandated: 840 MT</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label" id="auditCreditOrFineLabel">Net Green Credits Earned</div>
+          <div id="auditCreditOrFineVal" class="metric-val" style="font-size: 20px; color: #74c69d;">+120 MT</div>
+          <div id="auditCreditOrFineSub" class="metric-sub">Monetary Equivalent: ₹3,00,000</div>
+        </div>
+      </div>
+
+      <!-- Plain Text Statutory Guideline Citation -->
+      <div style="background: #101713; border: 1px solid var(--border); border-radius: 6px; padding: 14px; margin-bottom: 14px;">
+        <div style="font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+          <span>🏛️ Statutory Guideline Evaluation Summary</span>
+          <span class="rules-pill" id="auditPenaltyTierPill">Tier: NONE</span>
+        </div>
+        <p id="auditGuidelineCitation" style="font-size: 13px; color: #e8eae6; line-height: 1.5; margin: 0;"></p>
+      </div>
+
+      <!-- Formal Suspension Notice Payload (Rendered only on PENALIZED) -->
+      <div id="auditSuspensionBox" style="display: none; background: rgba(181, 101, 74, 0.12); border: 1px solid #d06d4e; border-radius: 6px; padding: 14px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <b style="color: #f4a261; font-size: 13px;">⚠️ Formal CPCB Statutory Suspension Notice</b>
+          <span style="font-size: 11px; background: #5c3d1e; color: #f4a261; padding: 2px 8px; border-radius: 12px;" id="suspensionNoticeId">CPCB/PWM/SUSP/...</span>
+        </div>
+        <div style="font-size: 12.5px; color: #e5b9ad; line-height: 1.5; margin-bottom: 8px;">
+          <b>Grounds:</b> <span id="suspensionGrounds"></span><br>
+          <b>Issued Under:</b> <span id="suspensionAct"></span><br>
+          <b>Portal Enforcement:</b> <span id="suspensionAction"></span><br>
+          <b>Remedy Period:</b> <span id="suspensionCurePeriod"></span>
+        </div>
+        <div style="font-size: 11.5px; color: var(--text-muted); background: #0b0f0c; padding: 8px; border-radius: 4px;">
+          <b>Statutory Notice Text:</b> <span id="suspensionNoticeText"></span>
         </div>
       </div>
     </div>

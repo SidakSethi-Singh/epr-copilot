@@ -39,6 +39,7 @@ function switchTab(tabId, btn) {
   if (tabId === 'kbTab') loadKnowledgeBase();
   if (tabId === 'leaderboardTab') loadLeaderboard();
   if (tabId === 'roadTab') runRoadEvaluation();
+  if (tabId === 'auditTab') initAuditTab();
 }
 
 function fillQuery(pill) {
@@ -407,5 +408,159 @@ async function runRoadEvaluation() {
   } catch (e) {
     console.warn('Road evaluation error:', e);
   }
+}
+
+// ── Mentor Feature 3: Compliance & Penalty Resolution Engine ────────────
+let lastAuditResult = null;
+let auditSamplesCache = null;
+
+async function initAuditTab() {
+  if (!lastAuditResult) {
+    runAuditEvaluation();
+  }
+}
+
+async function loadSampleManifest(sampleKey) {
+  try {
+    if (!auditSamplesCache) {
+      const res = await fetch('/api/audit/samples');
+      auditSamplesCache = await res.json();
+    }
+    const sample = auditSamplesCache[sampleKey];
+    if (sample) {
+      document.getElementById('auditCompanyId').value = sample.company_id || '';
+      document.getElementById('auditCompanyName').value = sample.company_name || '';
+      document.getElementById('auditTotalIntroduced').value = sample.manifest_tonnage_introduced_mt || 0;
+      document.getElementById('auditWasteUtilized').value = sample.waste_utilized_mt || 0;
+      document.getElementById('auditMandatedPct').value = sample.mandated_threshold_pct || 70;
+      document.getElementById('auditDefaultYear').value = sample.consecutive_default_year || 1;
+      await runAuditEvaluation();
+    }
+  } catch (e) {
+    console.warn('Error loading sample manifest:', e);
+  }
+}
+
+async function runAuditEvaluation() {
+  const company_id = document.getElementById('auditCompanyId')?.value.trim() || 'CPCB-GEN-001';
+  const company_name = document.getElementById('auditCompanyName')?.value.trim() || 'Generic Plastics Pvt Ltd';
+  const manifest_tonnage_introduced_mt = parseFloat(document.getElementById('auditTotalIntroduced')?.value) || 0;
+  const waste_utilized_mt = parseFloat(document.getElementById('auditWasteUtilized')?.value) || 0;
+  const mandated_threshold_pct = parseFloat(document.getElementById('auditMandatedPct')?.value) || 70;
+  const consecutive_default_year = parseInt(document.getElementById('auditDefaultYear')?.value) || 1;
+
+  try {
+    const res = await fetch('/api/audit/evaluate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        company_id,
+        company_name,
+        manifest_tonnage_introduced_mt,
+        waste_utilized_mt,
+        mandated_threshold_pct,
+        consecutive_default_year
+      })
+    });
+    const d = await res.json();
+    lastAuditResult = d;
+
+    const container = document.getElementById('auditResultContainer');
+    if (container) container.style.display = 'block';
+
+    document.getElementById('auditEntityMeta').innerText = d.company_id;
+    document.getElementById('auditEntityName').innerText = d.company_name;
+
+    const badge = document.getElementById('auditStatusBadge');
+    if (d.compliance_status === 'COMPLIANT') {
+      badge.className = 'badge live';
+      badge.style.background = 'var(--badge-live)';
+      badge.style.color = 'var(--badge-live-text)';
+      badge.innerText = 'COMPLIANT';
+      if (container) container.style.borderColor = '#2d6a4f';
+    } else if (d.compliance_status === 'WARNING') {
+      badge.className = 'badge mock';
+      badge.style.background = 'var(--badge-mock)';
+      badge.style.color = 'var(--badge-mock-text)';
+      badge.innerText = 'WARNING';
+      if (container) container.style.borderColor = '#b5832a';
+    } else {
+      badge.className = 'badge';
+      badge.style.background = '#d06d4e';
+      badge.style.color = '#ffffff';
+      badge.innerText = 'PENALIZED';
+      if (container) container.style.borderColor = '#993b2a';
+    }
+
+    const metrics = d.metrics || d.audit_metrics || {};
+    const fin = d.financial_resolution || d.resolution_action || {};
+
+    const utilMetric = document.getElementById('auditUtilizationMetric');
+    const color = d.compliance_status === 'COMPLIANT' ? '#52b788' : (d.compliance_status === 'WARNING' ? '#f4a261' : '#e76f51');
+    utilMetric.innerHTML = `<span style="color: ${color};">${metrics.actual_utilization_pct || 0}%</span> <span style="font-size: 13px; color: var(--text-muted);">/ ${metrics.mandated_threshold_pct || 70}% Target</span>`;
+    document.getElementById('auditTonnageMetric').innerText = `Utilized: ${metrics.waste_utilized_mt || 0} MT | Mandated: ${metrics.mandated_threshold_mt || metrics.mandated_target_mt || 0} MT`;
+
+    const labelEl = document.getElementById('auditCreditOrFineLabel');
+    const valEl = document.getElementById('auditCreditOrFineVal');
+    const subEl = document.getElementById('auditCreditOrFineSub');
+
+    if (d.compliance_status === 'COMPLIANT') {
+      labelEl.innerText = 'Net Green Credits Earned';
+      valEl.style.color = '#74c69d';
+      const credits = fin.net_credits_earned !== undefined ? fin.net_credits_earned : (fin.green_credits_earned_mt || 0);
+      valEl.innerText = `+${credits} MT`;
+      const valInr = (fin.green_credit_monetary_value_inr || 0).toLocaleString('en-IN');
+      subEl.innerText = `Monetary Equivalent: ₹${valInr}`;
+    } else if (d.compliance_status === 'WARNING') {
+      labelEl.innerText = 'Regulatory Warning / Deficit';
+      valEl.style.color = '#f4a261';
+      valEl.innerText = `-${metrics.shortfall_mt || 0} MT Shortfall`;
+      subEl.innerText = 'Deficit within 30-day statutory cure window';
+    } else {
+      labelEl.innerText = 'Statutory Fine Levied (EC)';
+      valEl.style.color = '#e76f51';
+      const fineInr = (fin.fine_levied_inr || 0).toLocaleString('en-IN');
+      valEl.innerText = `₹${fineInr}`;
+      const rateInr = (fin.penalty_rate_per_mt_inr || 0).toLocaleString('en-IN');
+      subEl.innerText = `Tier: ${fin.penalty_tier} (@ ₹${rateInr}/MT)`;
+    }
+
+    document.getElementById('auditPenaltyTierPill').innerText = `Tier: ${fin.penalty_tier || 'NONE'}`;
+    document.getElementById('auditGuidelineCitation').innerText = d.statutory_guideline_summary;
+
+    const suspBox = document.getElementById('auditSuspensionBox');
+    if (d.suspension_notice_payload) {
+      suspBox.style.display = 'block';
+      const susp = d.suspension_notice_payload;
+      document.getElementById('suspensionNoticeId').innerText = susp.notice_id || susp.notice_reference_id || 'CPCB/PWM/SUSP/001';
+      document.getElementById('suspensionGrounds').innerText = susp.fine_breakdown ? `Shortfall of ${susp.fine_breakdown.shortfall_mt} MT under ${susp.fine_breakdown.tier}` : 'Critical shortfall against Schedule II mandate';
+      document.getElementById('suspensionAct').innerText = Array.isArray(susp.governing_statutes) ? susp.governing_statutes.join('; ') : (susp.issued_under_act || 'Section 15, EPA 1986');
+      document.getElementById('suspensionAction').innerText = susp.action_levied || susp.cpcb_portal_action || 'PORTAL TRADING SUSPENSION';
+      document.getElementById('suspensionCurePeriod').innerText = susp.curative_remedy || '15 calendar days';
+      document.getElementById('suspensionNoticeText').innerText = `NOTICE: Pursuant to statutory powers vested under Section 15 of Environment (Protection) Act 1986, trading privileges for ${d.company_name} are restricted pending settlement of assessed penalty ₹${(susp.total_fine_inr || fin.fine_levied_inr || 0).toLocaleString('en-IN')}.`;
+    } else {
+      suspBox.style.display = 'none';
+    }
+  } catch (e) {
+    console.error('Audit evaluation error:', e);
+  }
+}
+
+function exportAuditResultJSON() {
+  if (!lastAuditResult) {
+    alert('Please evaluate a manifest before exporting.');
+    return;
+  }
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(lastAuditResult, null, 2));
+  const downloadAnchor = document.createElement('a');
+  downloadAnchor.setAttribute("href", dataStr);
+  downloadAnchor.setAttribute("download", `CPCB_Audit_Report_${lastAuditResult.company_id}_${lastAuditResult.compliance_status}.json`);
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+}
+
+function printAuditNotice() {
+  window.print();
 }
 

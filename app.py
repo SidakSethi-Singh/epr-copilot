@@ -30,6 +30,7 @@ from rag.validator import validate_packaging_artwork, get_sample_artworks
 from rag.marketplace import get_marketplace_data, optimize_procurement
 from rag.leaderboard import compute_leaderboard
 from rag.circular_economy import evaluate_road_reuse
+from rag.audit_engine import evaluate_manifest_compliance, get_sample_manifests
 
 app = Flask(__name__)
 # 64 KB request ceiling to prevent unbounded payload DOS attacks (IMP-003)
@@ -196,6 +197,44 @@ def api_road_reuse_evaluate():
     return jsonify(result)
 
 
+@app.route("/api/audit/samples")
+def api_audit_samples():
+    """Returns sample manifests (Compliant, Warning, Penalized) for testing."""
+    return jsonify(get_sample_manifests())
+
+
+@app.route("/api/audit/evaluate", methods=["POST"])
+def api_audit_evaluate():
+    """
+    Compliance & Penalty Resolution Engine:
+    Evaluates manifest waste utilization against statutory thresholds.
+    Calculates Green Credits or tier-based penalties + formal suspension notices.
+    """
+    data = request.get_json(force=True) or {}
+    company_id = data.get("company_id", "CPCB-SAMPLE-01")
+    company_name = data.get("company_name", "Enterprise Packaging Corp")
+    try:
+        manifest_tonnage = float(data.get("manifest_tonnage_introduced_mt", 100.0) or 0.0)
+        waste_utilized = float(data.get("waste_utilized_mt", 70.0) or 0.0)
+        mandated_pct = float(data.get("mandated_threshold_pct", 70.0) or 70.0)
+        consecutive_years = int(data.get("consecutive_default_year", 1) or 1)
+    except (ValueError, TypeError):
+        manifest_tonnage, waste_utilized, mandated_pct, consecutive_years = 100.0, 70.0, 70.0, 1
+
+    fiscal_year = data.get("fiscal_year", "2026-27")
+
+    result = evaluate_manifest_compliance(
+        company_id=company_id,
+        company_name=company_name,
+        manifest_tonnage_introduced_mt=manifest_tonnage,
+        waste_utilized_mt=waste_utilized,
+        mandated_threshold_pct=mandated_pct,
+        fiscal_year=fiscal_year,
+        consecutive_default_year=consecutive_years
+    )
+    return jsonify(result)
+
+
 @app.route("/api/ask", methods=["POST"])
 def api_ask():
     data = request.get_json(force=True) or {}
@@ -265,3 +304,4 @@ if __name__ == "__main__":
     debug = os.environ.get("FLASK_DEBUG", "0") == "1"
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=debug, port=port)
+
