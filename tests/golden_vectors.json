@@ -1,0 +1,158 @@
+{
+  "description": "10 Statutory Golden Test Vectors for EPR Compliance Copilot",
+  "ruleset_version": "2026-10-10.1",
+  "verified_on": "2026-10-10",
+  "verified_by": "Person 1 (Data Fixer)",
+  "vectors": [
+    {
+      "id": "vector_01",
+      "name": "FY 2026-27 Cat I Rigid 100 MT",
+      "input": {
+        "pibo_type": "Brand Owner",
+        "fiscal_year": "2026-27",
+        "tonnages": { "cat_1": 100.0, "cat_2": 0.0, "cat_3": 0.0, "cat_4": 0.0 }
+      },
+      "expected": {
+        "total_introduced_mt": 100.0,
+        "total_recycling_target_mt": 70.0,
+        "total_recycled_content_mt": 40.0,
+        "potential_ec_penalty_inr": 350000,
+        "refund_year_1_pct": 75,
+        "refund_year_2_pct": 60,
+        "refund_year_3_pct": 40
+      }
+    },
+    {
+      "id": "vector_02",
+      "name": "FY 2026-27 Cat IV Compostable 100 MT (Corrected from 100% to 70%)",
+      "input": {
+        "pibo_type": "Brand Owner",
+        "fiscal_year": "2026-27",
+        "tonnages": { "cat_1": 0.0, "cat_2": 0.0, "cat_3": 0.0, "cat_4": 100.0 }
+      },
+      "expected": {
+        "total_introduced_mt": 100.0,
+        "total_recycling_target_mt": 70.0,
+        "total_recycled_content_mt": 0.0,
+        "potential_ec_penalty_inr": 350000
+      }
+    },
+    {
+      "id": "vector_03",
+      "name": "FY 2026-27 Cat II Flexible 200 MT (Recycled content corrected to 10%)",
+      "input": {
+        "pibo_type": "Producer",
+        "fiscal_year": "2026-27",
+        "tonnages": { "cat_1": 0.0, "cat_2": 200.0, "cat_3": 0.0, "cat_4": 0.0 }
+      },
+      "expected": {
+        "total_introduced_mt": 200.0,
+        "total_recycling_target_mt": 100.0,
+        "total_recycled_content_mt": 20.0,
+        "potential_ec_penalty_inr": 500000
+      }
+    },
+    {
+      "id": "vector_04",
+      "name": "FY 2026-27 Cat III MLP 50 MT (Recycled content corrected to 5%)",
+      "input": {
+        "pibo_type": "Brand Owner",
+        "fiscal_year": "2026-27",
+        "tonnages": { "cat_1": 0.0, "cat_2": 0.0, "cat_3": 50.0, "cat_4": 0.0 }
+      },
+      "expected": {
+        "total_introduced_mt": 50.0,
+        "total_recycling_target_mt": 25.0,
+        "total_recycled_content_mt": 2.5,
+        "potential_ec_penalty_inr": 125000
+      }
+    },
+    {
+      "id": "vector_05",
+      "name": "FY 2024-25 All Categories 100 MT each (400 MT Total)",
+      "input": {
+        "pibo_type": "Importer",
+        "fiscal_year": "2024-25",
+        "tonnages": { "cat_1": 100.0, "cat_2": 100.0, "cat_3": 100.0, "cat_4": 100.0 }
+      },
+      "expected": {
+        "total_introduced_mt": 400.0,
+        "total_recycling_target_mt": 160.0,
+        "total_recycled_content_mt": 0.0,
+        "potential_ec_penalty_inr": 800000
+      }
+    },
+    {
+      "id": "vector_06",
+      "name": "FY 2025-26 Cat I 50 MT + Cat II 50 MT (100 MT Total)",
+      "input": {
+        "pibo_type": "Producer",
+        "fiscal_year": "2025-26",
+        "tonnages": { "cat_1": 50.0, "cat_2": 50.0, "cat_3": 0.0, "cat_4": 0.0 }
+      },
+      "expected": {
+        "total_introduced_mt": 100.0,
+        "total_recycling_target_mt": 50.0,
+        "total_recycled_content_mt": 20.0,
+        "potential_ec_penalty_inr": 250000
+      }
+    },
+    {
+      "id": "vector_07",
+      "name": "FY 2027-28 All Categories 100 MT each (400 MT Total)",
+      "input": {
+        "pibo_type": "Brand Owner",
+        "fiscal_year": "2027-28",
+        "tonnages": { "cat_1": 100.0, "cat_2": 100.0, "cat_3": 100.0, "cat_4": 100.0 }
+      },
+      "expected": {
+        "total_introduced_mt": 400.0,
+        "total_recycling_target_mt": 280.0,
+        "total_recycled_content_mt": 80.0,
+        "potential_ec_penalty_inr": 1400000
+      }
+    },
+    {
+      "id": "vector_08",
+      "name": "FY 2028-29 Cat I, II, III 100 MT each (300 MT Total)",
+      "input": {
+        "pibo_type": "Producer",
+        "fiscal_year": "2028-29",
+        "tonnages": { "cat_1": 100.0, "cat_2": 100.0, "cat_3": 100.0, "cat_4": 0.0 }
+      },
+      "expected": {
+        "total_introduced_mt": 300.0,
+        "total_recycling_target_mt": 200.0,
+        "total_recycled_content_mt": 90.0,
+        "potential_ec_penalty_inr": 1000000
+      }
+    },
+    {
+      "id": "vector_09",
+      "name": "Environmental Compensation Escalation for 10 MT deficit",
+      "input": {
+        "deficit_mt": 10.0
+      },
+      "expected": {
+        "year_1_ec_inr": 50000,
+        "year_2_ec_inr": 100000,
+        "year_3_ec_inr": 200000
+      }
+    },
+    {
+      "id": "vector_10",
+      "name": "Zero tonnage baseline",
+      "input": {
+        "pibo_type": "Brand Owner",
+        "fiscal_year": "2026-27",
+        "tonnages": { "cat_1": 0.0, "cat_2": 0.0, "cat_3": 0.0, "cat_4": 0.0 }
+      },
+      "expected": {
+        "total_introduced_mt": 0.0,
+        "total_recycling_target_mt": 0.0,
+        "total_recycled_content_mt": 0.0,
+        "potential_ec_penalty_inr": 0
+      }
+    }
+  ]
+}
