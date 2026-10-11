@@ -65,6 +65,14 @@ def handle_rate_limit(err):
 def handle_internal_server_error(err):
     return jsonify({"error": "Internal Server Error", "code": 500}), 500
 
+@app.after_request
+def add_security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
+
 @app.route("/health")
 def health():
     status = get_llm_status()
@@ -179,6 +187,68 @@ def api_textract_parse():
 def api_vault_records():
     """Returns tamper-proof immutable audit records stored in DynamoDB vault."""
     return jsonify(list_audit_vault(limit=20))
+
+
+@app.route("/api/parser/samples")
+def api_parser_samples():
+    """Returns sample packaging invoices and BOMs for parsing."""
+    return jsonify(get_sample_invoices()), 200
+
+
+@app.route("/api/parser/parse", methods=["POST"])
+@limiter.limit("30 per minute")
+def api_parser_parse():
+    """Parses packaging invoice text/BOM, classifies into CPCB categories, and sums tonnages."""
+    data = request.get_json(force=True, silent=True) or {}
+    if not isinstance(data, dict):
+        return jsonify({"error": "Malformed JSON payload", "code": 400}), 400
+    raw_text = data.get("raw_text", "")
+    result = parse_packaging_text(str(raw_text))
+    return jsonify(result), 200
+
+
+@app.route("/api/validator/samples")
+def api_validator_samples():
+    """Returns sample packaging artworks for Rule 11 compliance testing."""
+    return jsonify(get_sample_artworks()), 200
+
+
+@app.route("/api/validator/validate", methods=["POST"])
+@limiter.limit("30 per minute")
+def api_validator_validate():
+    """Validates packaging artwork text against Rule 11 CPCB labeling mandates."""
+    data = request.get_json(force=True, silent=True) or {}
+    if not isinstance(data, dict):
+        return jsonify({"error": "Malformed JSON payload", "code": 400}), 400
+    artwork_text = data.get("artwork_text", "")
+    result = validate_packaging_artwork(str(artwork_text))
+    return jsonify(result), 200
+
+
+@app.route("/api/marketplace/quotes")
+def api_marketplace_quotes():
+    """Returns verified CPCB-registered PWPs, benchmark spot prices, and available credits."""
+    return jsonify(get_marketplace_data()), 200
+
+
+@app.route("/api/marketplace/optimize", methods=["POST"])
+@limiter.limit("30 per minute")
+def api_marketplace_optimize():
+    """Calculates optimal certificate procurement costs and compares against EC penalties."""
+    data = request.get_json(force=True, silent=True) or {}
+    if not isinstance(data, dict):
+        return jsonify({"error": "Malformed JSON payload", "code": 400}), 400
+    obligations = data.get("obligations", {})
+    if not isinstance(obligations, dict):
+        obligations = {}
+    cleaned_obs = {}
+    for k, v in obligations.items():
+        try:
+            cleaned_obs[str(k)] = max(0.0, float(v or 0.0))
+        except (ValueError, TypeError):
+            cleaned_obs[str(k)] = 0.0
+    result = optimize_procurement(cleaned_obs)
+    return jsonify(result), 200
 
 
 

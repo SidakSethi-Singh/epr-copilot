@@ -218,3 +218,71 @@ def test_vault_records_endpoint(client):
     assert "integrity_sha256" in records[0]
 
 
+def test_security_headers_present(client):
+    res = client.get("/health")
+    assert res.status_code == 200
+    assert res.headers.get("X-Content-Type-Options") == "nosniff"
+    assert res.headers.get("X-Frame-Options") == "SAMEORIGIN"
+    assert res.headers.get("X-XSS-Protection") == "1; mode=block"
+    assert res.headers.get("Referrer-Policy") == "strict-origin-when-cross-origin"
+
+
+def test_parser_endpoints(client):
+    samples_res = client.get("/api/parser/samples")
+    assert samples_res.status_code == 200
+    samples = samples_res.get_json()
+    assert "fmcg_beverage" in samples
+
+    sample_text = samples["fmcg_beverage"]["raw_text"]
+    parse_res = client.post("/api/parser/parse", json={"raw_text": sample_text})
+    assert parse_res.status_code == 200
+    parsed = parse_res.get_json()
+    assert parsed["success"] is True
+    assert parsed["total_mt"] > 0
+    assert parsed["tonnages"]["cat_1"] > 0
+    assert parsed["tonnages"]["cat_2"] > 0
+
+    # Test empty payload handling
+    empty_res = client.post("/api/parser/parse", json={"raw_text": ""})
+    assert empty_res.status_code == 200
+    assert empty_res.get_json()["success"] is False
+
+
+def test_validator_endpoints(client):
+    samples_res = client.get("/api/validator/samples")
+    assert samples_res.status_code == 200
+    samples = samples_res.get_json()
+    assert "compliant_pet" in samples
+    assert "non_compliant_pouch" in samples
+
+    comp_res = client.post("/api/validator/validate", json={"artwork_text": samples["compliant_pet"]["artwork_text"]})
+    assert comp_res.status_code == 200
+    comp_data = comp_res.get_json()
+    assert comp_data["status"] == "COMPLIANT"
+    assert comp_data["score"] == 100
+
+    non_comp_res = client.post("/api/validator/validate", json={"artwork_text": samples["non_compliant_pouch"]["artwork_text"]})
+    assert non_comp_res.status_code == 200
+    non_comp_data = non_comp_res.get_json()
+    assert non_comp_data["status"] in ["NON-COMPLIANT", "NEEDS REVISION"]
+    assert non_comp_data["score"] < 80
+
+
+def test_marketplace_endpoints(client):
+    quotes_res = client.get("/api/marketplace/quotes")
+    assert quotes_res.status_code == 200
+    quotes = quotes_res.get_json()
+    assert "benchmark_spot_prices" in quotes
+    assert "verified_pwps" in quotes
+    assert len(quotes["verified_pwps"]) >= 4
+
+    opt_res = client.post("/api/marketplace/optimize", json={
+        "obligations": {"cat_1": 100.0, "cat_2": 200.0, "cat_3": 50.0}
+    })
+    assert opt_res.status_code == 200
+    opt_data = opt_res.get_json()
+    assert opt_data["total_obligation_mt"] == 350.0
+    assert opt_data["net_savings_inr"] > 0
+    assert "procurement_verdict" in opt_data
+
+

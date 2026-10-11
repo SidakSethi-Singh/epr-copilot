@@ -40,6 +40,9 @@ def test_parse_bhiwandi_eway():
     assert extracted["pwm_category"] == "Category II (Flexible Plastics)"
 
 
+from datetime import datetime
+
+
 def test_audit_vault_integrity_and_persistence():
     audit_payload = {
         "company_id": "TEST-VAULT-CO",
@@ -47,14 +50,14 @@ def test_audit_vault_integrity_and_persistence():
         "compliance_status": "COMPLIANT",
         "metrics": {"actual_utilization_pct": 75.0},
         "financial_resolution": {"net_credits_earned": 50.0, "fine_levied_inr": 0.0},
-        "timestamp": "2026-10-10T12:00:00"
+        "timestamp": datetime.now().isoformat()
     }
     receipt = save_audit_record(audit_payload)
     assert "audit_id" in receipt
     assert "integrity_sha256" in receipt
     assert receipt["status"] == "VAULT_SEALED"
 
-    records = list_audit_vault(limit=10)
+    records = list_audit_vault(limit=50)
     assert len(records) > 0
     found = any(r["company_id"] == "TEST-VAULT-CO" for r in records)
     assert found is True

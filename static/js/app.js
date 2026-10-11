@@ -40,6 +40,7 @@ function switchTab(tabId, btn) {
   if (tabId === 'leaderboardTab') loadLeaderboard();
   if (tabId === 'roadTab') runRoadEvaluation();
   if (tabId === 'auditTab') initAuditTab();
+  if (tabId === 'marketplaceTab') loadMarketplaceQuotes();
 }
 
 function fillQuery(pill) {
