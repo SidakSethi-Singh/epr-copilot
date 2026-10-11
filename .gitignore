@@ -22,3 +22,10 @@ Thumbs.db
 data/
 *.db
 
+# Hackathon analysis and evaluation reports
+final.md
+final_rep.md
+proj_summ.md
+proj_summ1.md
+report1.md
+Screenshot*.png

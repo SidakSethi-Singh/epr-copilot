@@ -19,10 +19,25 @@
         {{ provider_label }}
       </span>
     </div>
-    <div class="subtitle">
-      Statutory Ground-Truth Assistant for Plastic Waste Management (Schedule II) &amp; Waste-to-Energy Circularity · {{ kb_size }} verified knowledge chunks
-    </div>
+    <div class="subtitle">From plastic-packaging obligations to a transparent recycling and energy-recovery scenario.</div>
   </header>
+
+  <section class="hero-panel" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <p class="eyebrow">Compliance intelligence · circular outcomes</p>
+      <h2 id="hero-title">What we throw away can inform how we power what we keep.</h2>
+      <p>Model packaging obligations, compare authorized end-of-life energy scenarios, and keep every answer tied to a dated rules snapshot.</p>
+      <div class="hero-actions">
+        <button class="btn" onclick="openCalculator()">Try the impact calculator <span aria-hidden="true">→</span></button>
+        <button class="btn btn-outline" onclick="fillDemoQuestion()">See a grounded answer</button>
+      </div>
+    </div>
+    <div class="impact-grid" aria-label="Project capabilities">
+      <div><strong>4</strong><span>packaging categories</span></div>
+      <div><strong>2</strong><span>energy-route scenarios</span></div>
+      <div><strong>{{ kb_size }}</strong><span>cited knowledge chunks</span></div>
+    </div>
+  </section>
 
   <!-- Rules Verification Provenance Banner (G16) -->
   <div class="rules-verified-banner" id="rulesBanner">
@@ -31,12 +46,12 @@
         <span class="pulse-dot"></span>
         <span><b>Statutory Ruleset Active:</b> <code id="lblRulesVersion">{{ rules_meta.ruleset_version if rules_meta else '2026-10-10.1' }}</code> · Verified against Gazette &amp; CPCB Orders on <b>{{ rules_meta.verified_on if rules_meta else '10 Oct 2026' }}</b></span>
       </div>
-      <span class="status-pill verified">Single Source of Truth (rules.json)</span>
+      <span class="status-pill verified">Dated rules snapshot</span>
     </div>
   </div>
 
   <div class="disclaimer-banner">
-    <b>Regulatory Disclaimer:</b> This copilot provides statutory compliance &amp; energy recovery calculations grounded in verified PWM notifications. Always confirm filings with official CPCB / MoEFCC circulars and an environmental compliance lawyer before submission.
+    <b>Decision-support only:</b> figures are planning estimates, not a filing, legal opinion, or facility-routing instruction. Confirm current CPCB / MoEFCC notices and authorized processor acceptance before acting.
   </div>
 
   <div class="tabs">
@@ -143,10 +158,10 @@
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
         <div class="card-title" style="margin-bottom:0;">EPR Liability, Penalties &amp; Waste-to-Energy Bridge</div>
-        <span class="estimate-badge">Simplified Estimate (Baseline Target Q)</span>
+        <span class="estimate-badge">Planning estimate · assumptions visible</span>
       </div>
       <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
-        Computes statutory mechanical recycling targets, recycled-content mandates, certificate budgets, escalating Environmental Compensation (EC), and <b>Waste-to-Energy co-processing recovery</b> under Schedule II &amp; CPCB guidelines.
+        Start with packaging volume. Then review recycling obligations and compare two <b>illustrative</b> energy-recovery routes for non-recycled Cat II/III material. This is not a routing recommendation or a filing output.
       </p>
 
       <div class="grid-2">
@@ -239,56 +254,56 @@
             <div class="metric-sub">Packaging mandate</div>
           </div>
           <div class="metric-card">
-            <div class="metric-label">Year 1 EC Penalty Risk</div>
+            <div class="metric-label">Illustrative EC exposure</div>
             <div class="metric-val" style="color: #f4a261;" id="resPenaltyExposure">Rs 0</div>
-            <div class="metric-sub">Rs 5,000/MT baseline</div>
+            <div class="metric-sub">Model assumption — verify current guidance</div>
           </div>
         </div>
 
         <!-- TRACK 03: WASTE-TO-ENERGY BRIDGE PANEL (G13, G14) -->
         <div class="card energy-bridge-card">
           <div class="energy-title">
-            <span>⚡ Waste-to-Energy (WtE) &amp; Co-Processing Energy Recovery Bridge</span>
-            <span class="track-tag" style="background:rgba(230,175,46,0.2); color:#f3c969; border-color:#f3c969;">Track 03 Theme Alignment</span>
+            <span>⚡ Energy-recovery scenario comparison</span>
+            <span class="track-tag" style="background:rgba(230,175,46,0.2); color:#f3c969; border-color:#f3c969;">Waste → value</span>
           </div>
           <p style="font-size:12.5px; color:var(--text-muted); margin-bottom:12px;">
-            Under Schedule II Clause 8 and CPCB Co-Processing Guidelines, non-recycled flexible (Cat II: ~35 MJ/kg) and multilayered (Cat III: ~25 MJ/kg) plastics must be diverted to authorized thermal &amp; electrical recovery instead of landfills.
+            Compare the estimated output if eligible non-recycled Cat II/III material is accepted by an authorized cement-kiln co-processing route <em>or</em> a WtE facility. Outputs are alternative scenarios—do not add them together.
           </p>
 
           <div class="grid-4" style="margin-bottom:12px;">
             <div class="metric-card" style="background:#131d16;">
               <div class="metric-label">Non-Recycled Feedstock</div>
               <div class="metric-val" id="resEnergyFeedstock">0 MT</div>
-              <div class="metric-sub">Cat II &amp; III non-recycled remainder</div>
+              <div class="metric-sub">Potential Cat II &amp; III feedstock</div>
             </div>
             <div class="metric-card" style="background:#131d16;">
               <div class="metric-label">Cement Kiln Co-Processing</div>
               <div class="metric-val" style="color:#e9c46a;" id="resThermalMwh">0 MWh</div>
-              <div class="metric-sub">80% thermal substitution efficiency</div>
+              <div class="metric-sub">Alternative thermal scenario</div>
             </div>
             <div class="metric-card" style="background:#131d16;">
               <div class="metric-label">Waste-to-Energy Power</div>
               <div class="metric-val" style="color:#2a9d8f;" id="resElectricalMwh">0 MWh</div>
-              <div class="metric-sub">22% electrical grid generation</div>
+              <div class="metric-sub">Alternative electrical scenario</div>
             </div>
             <div class="metric-card" style="background:#131d16;">
               <div class="metric-label">Fossil Coal Displaced</div>
               <div class="metric-val" style="color:#8ab17d;" id="resCoalDisplaced">0 MT</div>
-              <div class="metric-sub">Equivalent Indian industrial coal</div>
+              <div class="metric-sub">Thermal-route estimate only</div>
             </div>
           </div>
 
           <!-- Circular Waste Flow Diagram -->
           <div class="waste-flow-container">
-            <div style="font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:8px;">CIRCULAR ECONOMY WASTE-FLOW ALLOCATION</div>
+            <div style="font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:8px;">ILLUSTRATIVE CIRCULAR FLOW</div>
             <div class="waste-flow-bar">
               <div class="flow-segment rec" id="flowRec" style="width:50%;">Recycling</div>
               <div class="flow-segment wte" id="flowWte" style="width:50%;">Energy Recovery</div>
             </div>
             <div class="flow-legend">
               <div class="flow-legend-item"><span class="legend-box rec"></span> <span id="legRecText">Mandated Mechanical Recycling</span></div>
-              <div class="flow-legend-item"><span class="legend-box wte"></span> <span id="legWteText">Prescribed Energy Recovery (AFR Co-Processing / WtE)</span></div>
-              <div class="flow-legend-item"><span class="legend-box land"></span> 0% Landfill Diversion (Statutory Rule 8 Mandate)</div>
+              <div class="flow-legend-item"><span class="legend-box wte"></span> <span id="legWteText">Potential eligible energy feedstock</span></div>
+              <div class="flow-legend-item"><span class="legend-box land"></span> Actual routing requires facility and regulator validation</div>
             </div>
           </div>
         </div>
@@ -300,7 +315,7 @@
           </div>
           <div class="grid-2" style="margin-top:10px;">
             <div style="font-size: 12px; color: var(--text-muted);">
-              <b>Consecutive Default EC Escalation:</b><br>
+              <b>Illustrative EC escalation model:</b><br>
               • Year 1 (₹5,000/MT): <span id="ecYr1" style="color:#f4a261;"></span><br>
               • Year 2 (₹10,000/MT): <span id="ecYr2" style="color:#e76f51;"></span><br>
               • Year 3 (₹20,000/MT): <span id="ecYr3" style="color:#d62828;"></span>
@@ -316,10 +331,8 @@
         </div>
 
         <div style="font-size: 12px; background: rgba(231,111,81,0.08); border-left: 3px solid #e76f51; padding: 10px 14px; border-radius: 4px; margin-top: 14px;">
-          <b style="color: #f4a261;">CPCB Escalating Environmental Compensation (EC) Rate Schedule:</b><br>
-          • <b>Year 1 Default:</b> ₹5,000 / MT (Initial statutory base fine)<br>
-          • <b>Year 2 Default:</b> ₹10,000 / MT (2× consecutive penalty multiplier)<br>
-          • <b>Year 3 Default:</b> ₹20,000 / MT (4× multiplier + prosecution under Section 15 EPA 1986)
+          <b style="color: #f4a261;">EC model assumption — review before reliance:</b><br>
+          This prototype shows a simple year-1/year-2/year-3 exposure scenario. CPCB EC treatment can depend on category, shortfall, notices, and the applicable version of guidance. Do not use this output as a statutory demand calculation.
         </div>
 
         <div style="margin-top: 14px;">
