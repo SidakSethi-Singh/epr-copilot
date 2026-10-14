@@ -109,19 +109,24 @@ async function askQuestion() {
       }
     }
 
-    let formatted = data.answer.replace(/\n/g, '<br>');
-    html += formatted;
+    let formatted = data.answer
+      .replace(/^### (.*$)/gim, '<h3 style="color:var(--accent); margin:14px 0 8px; font-size:15px; font-weight:700;">$1</h3>')
+      .replace(/\*\*(.*?)\*\*/g, '<b style="color:#ffffff;">$1</b>')
+      .replace(/^\> (.*$)/gim, '<div style="border-left:3px solid var(--accent); background:rgba(56,189,248,0.08); padding:8px 12px; margin:6px 0; border-radius:0 6px 6px 0; color:#e2e8f0; font-size:13px; line-height:1.5;">$1</div>')
+      .replace(/\n/g, '<br>');
+    html += `<div class="qa-answer-card" style="line-height:1.6; font-size:13.5px; color:#e2e8f0;">${formatted}</div>`;
 
     if (data.citations && data.citations.length > 0) {
-      html += '<br><br><b>Ground-truth Statutory Citations:</b><br>';
+      html += '<div style="margin-top:16px; padding-top:12px; border-top:1px solid var(--border);"><b style="color:var(--accent); font-size:13px;">Ground-truth Statutory Citations:</b><div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">';
       data.citations.forEach(c => {
         html += `<span class="citation-tag ${c.confidence}">[${c.id}] ${c.title} (${c.confidence})</span>`;
       });
+      html += '</div></div>';
     }
 
     const rulesVer = data._meta?.ruleset_version || data._meta?.rules_version || 'not supplied';
     const disclaimer = data.disclaimer || 'Decision-support output; verify current official notices before acting.';
-    html += `<br><br><i style="color:#9aa59d;font-size:12px;">Rules snapshot: v${rulesVer} · ${disclaimer}</i>`;
+    html += `<div style="margin-top:14px; font-size:11.5px; color:#94a3b8; font-style:italic;">Rules snapshot: v${rulesVer} · ${disclaimer}</div>`;
     output.innerHTML = html;
     output.style.display = 'block';
   } catch (err) {
@@ -495,6 +500,9 @@ async function initAuditTab() {
     await runAuditEvaluation();
   }
   loadAuditVault();
+  if (!lastTextractParsed) {
+    loadTextractSample('vapi_rigid');
+  }
 }
 
 async function loadSampleManifest(sampleKey) {
@@ -678,9 +686,11 @@ async function loadTextractSample(sampleKey) {
   }
 }
 
-function pipeTextractToAudit() {
+async function pipeTextractToAudit() {
   if (!lastTextractParsed || !lastTextractParsed.audit_bridge_payload) {
-    alert('Please select or upload a Textract manifest first.');
+    await loadTextractSample('vapi_rigid');
+  }
+  if (!lastTextractParsed || !lastTextractParsed.audit_bridge_payload) {
     return;
   }
   const bridge = lastTextractParsed.audit_bridge_payload;
@@ -742,5 +752,286 @@ async function loadAuditVault() {
     console.warn('Error loading audit vault:', e);
   }
 }
+
+// ── Packaging BOM & GST Invoice Parser ─────────────────────────
+let parserSamplesCache = null;
+let lastParserParsed = null;
+
+async function loadParserSample(sampleKey) {
+  try {
+    if (!parserSamplesCache) {
+      const res = await fetch('/api/parser/samples');
+      parserSamplesCache = await res.json();
+    }
+    const sample = parserSamplesCache[sampleKey];
+    if (sample && sample.raw_text) {
+      const textarea = document.getElementById('parserTextInput');
+      if (textarea) textarea.value = sample.raw_text.trim();
+      await runInvoiceParse();
+    }
+  } catch (e) {
+    console.warn('Error loading parser sample:', e);
+  }
+}
+
+async function runInvoiceParse() {
+  const textarea = document.getElementById('parserTextInput');
+  const text = textarea ? textarea.value.trim() : '';
+  if (!text) {
+    alert('Please enter or select sample invoice/BOM text first.');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/parser/parse', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ raw_text: text })
+    });
+    const data = await res.json();
+    lastParserParsed = data;
+
+    const resultsSec = document.getElementById('parserResultsSection');
+    const pipeBtn = document.getElementById('btnPipeToCalc');
+    if (resultsSec) resultsSec.style.display = 'block';
+    if (pipeBtn) pipeBtn.style.display = 'inline-block';
+
+    const t = data.tonnages || {};
+    document.getElementById('parseTotalMt').innerText = `${data.total_mt || 0} MT`;
+    document.getElementById('parseItemsCount').innerText = `${data.items_count || 0} items classified`;
+    document.getElementById('parseCat1Mt').innerText = `${t.cat_1 || 0} MT`;
+    document.getElementById('parseCat2Mt').innerText = `${t.cat_2 || 0} MT`;
+    const cat34 = ((t.cat_3 || 0) + (t.cat_4 || 0)).toFixed(1);
+    document.getElementById('parseCat34Mt').innerText = `${cat34} MT`;
+
+    const tbody = document.getElementById('parserItemsBody');
+    if (tbody) {
+      tbody.innerHTML = '';
+      (data.parsed_items || []).forEach(item => {
+        const tr = document.createElement('tr');
+        const badgeClass = item.confidence === 'high' ? 'verified' : 'reported';
+        tr.innerHTML = `
+          <td style="font-size:12.5px; color:#e2e8f0;">${item.raw_line}</td>
+          <td><b>${item.weight_mt} MT</b></td>
+          <td><span class="citation-tag ${badgeClass}">${item.category_name}</span></td>
+          <td><span style="font-size:11.5px; color:var(--text-muted); text-transform:uppercase;">${item.confidence}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+  } catch (e) {
+    console.warn('Error parsing invoice text:', e);
+  }
+}
+
+function pipeParserToCalculator() {
+  if (!lastParserParsed || !lastParserParsed.tonnages) {
+    alert('Please parse an invoice or BOM first.');
+    return;
+  }
+  const t = lastParserParsed.tonnages;
+  const c1 = document.getElementById('cat1Input');
+  const c2 = document.getElementById('cat2Input');
+  const c3 = document.getElementById('cat3Input');
+  const c4 = document.getElementById('cat4Input');
+
+  if (c1) c1.value = t.cat_1 || 0;
+  if (c2) c2.value = t.cat_2 || 0;
+  if (c3) c3.value = t.cat_3 || 0;
+  if (c4) c4.value = t.cat_4 || 0;
+
+  openCalculator();
+  calculateObligations();
+}
+
+// ── Rule 11 Packaging Artwork & Labeling Validator ─────────────
+let validatorSamplesCache = null;
+
+async function loadValidatorSample(sampleKey) {
+  try {
+    if (!validatorSamplesCache) {
+      const res = await fetch('/api/validator/samples');
+      validatorSamplesCache = await res.json();
+    }
+    const sample = validatorSamplesCache[sampleKey];
+    if (sample && sample.artwork_text) {
+      const textarea = document.getElementById('validatorArtworkInput');
+      if (textarea) textarea.value = sample.artwork_text.trim();
+      await runArtworkValidation();
+    }
+  } catch (e) {
+    console.warn('Error loading validator sample:', e);
+  }
+}
+
+async function runArtworkValidation() {
+  const textarea = document.getElementById('validatorArtworkInput');
+  const text = textarea ? textarea.value.trim() : '';
+  if (!text) {
+    alert('Please enter packaging label text first.');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/validator/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ artwork_text: text })
+    });
+    const d = await res.json();
+
+    const sec = document.getElementById('validatorResultsSection');
+    if (sec) sec.style.display = 'block';
+
+    const circle = document.getElementById('validatorScoreCircle');
+    if (circle) {
+      circle.innerText = `${d.score}%`;
+      circle.className = `score-badge-circle ${d.score >= 80 ? 'pass' : (d.score >= 50 ? 'warn' : 'fail')}`;
+    }
+
+    const heading = document.getElementById('validatorStatusHeading');
+    if (heading) heading.innerText = d.status;
+
+    const summary = document.getElementById('validatorCountsSummary');
+    if (summary) summary.innerText = `${d.passed_checks} of ${d.total_checks} statutory checks passed`;
+
+    const verdictBadge = document.getElementById('validatorVerdictBadge');
+    if (verdictBadge) {
+      verdictBadge.innerText = d.status === 'COMPLIANT' ? 'Full Statutory Clearance' : 'Statutory Deficit Action Required';
+      verdictBadge.className = `status-pill ${d.status === 'COMPLIANT' ? 'verified' : 'needs_verify'}`;
+    }
+
+    const findingsContainer = document.getElementById('validatorFindingsContainer');
+    if (findingsContainer) {
+      findingsContainer.innerHTML = '';
+      (d.findings || []).forEach(f => {
+        const isPass = f.status === 'PASS';
+        const isWarn = f.status === 'WARNING';
+        const color = isPass ? '#10b981' : (isWarn ? '#f59e0b' : '#ef4444');
+        const icon = isPass ? '✅' : (isWarn ? '⚠️' : '❌');
+
+        const card = document.createElement('div');
+        card.style.cssText = `background:#1e293b; border:1px solid ${isPass ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}; border-left:4px solid ${color}; border-radius:6px; padding:12px; margin-bottom:8px;`;
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <b style="font-size:13px; color:#f8fafc;">${icon} ${f.check}</b>
+            <span style="font-size:11px; font-weight:700; color:${color}; text-transform:uppercase;">${f.status}</span>
+          </div>
+          <div style="font-size:12px; color:#94a3b8;">Clause: <code style="color:#38bdf8;">${f.clause}</code></div>
+          <div style="font-size:12.5px; color:#cbd5e1; margin-top:4px;">${f.matched_text ? `<b>Detected:</b> ${f.matched_text}` : f.message}</div>
+        `;
+        findingsContainer.appendChild(card);
+      });
+    }
+
+    const recsList = document.getElementById('validatorRecommendationsList');
+    if (recsList) {
+      recsList.innerHTML = '';
+      if (!d.recommendations || d.recommendations.length === 0) {
+        recsList.innerHTML = '<li style="color:#10b981;">Artwork meets all CPCB Rule 11 and IS 14534 standards. Ready for production!</li>';
+      } else {
+        d.recommendations.forEach(r => {
+          const li = document.createElement('li');
+          li.style.cssText = 'margin-bottom:4px; color:#f8fafc;';
+          li.innerText = r;
+          recsList.appendChild(li);
+        });
+      }
+    }
+  } catch (e) {
+    console.warn('Error in artwork validation:', e);
+  }
+}
+
+// ── CPCB-Registered PWP Credit Marketplace ─────────────────────
+let marketplaceDataCache = null;
+
+async function loadMarketplaceQuotes() {
+  const tbody = document.getElementById('pwpTableBody');
+  if (!tbody) return;
+
+  try {
+    const res = await fetch('/api/marketplace/quotes');
+    const data = await res.json();
+    marketplaceDataCache = data;
+
+    if (!data.verified_pwps || data.verified_pwps.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No verified recyclers listed.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = '';
+    data.verified_pwps.forEach(p => {
+      const tr = document.createElement('tr');
+      const streams = (p.authorized_categories || []).map(c => `<span class="citation-tag verified" style="font-size:10px; padding:2px 6px;">${c}</span>`).join(' ');
+      tr.innerHTML = `
+        <td><b>${p.name}</b><br><span style="font-size:11px; color:#94a3b8;">${p.id}</span></td>
+        <td style="font-size:12px; color:#cbd5e1;">${p.hub}</td>
+        <td><code style="font-size:11.5px; color:#38bdf8;">${p.cpcb_reg}</code></td>
+        <td>${streams}</td>
+        <td><b style="color:#10b981;">${p.available_credits_mt.toLocaleString('en-IN')} MT</b></td>
+        <td><span style="color:#f59e0b; font-size:12px;">★ ${p.rating}</span></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // Run initial procurement optimization simulation
+    runMarketplaceOptimization();
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:#ef4444; text-align:center;">Error loading marketplace quotes: ${e}</td></tr>`;
+  }
+}
+
+function fillMarketplaceFromCalculator() {
+  const c1 = parseFloat(document.getElementById('cat1Input')?.value) || 0;
+  const c2 = parseFloat(document.getElementById('cat2Input')?.value) || 0;
+  const c3 = parseFloat(document.getElementById('cat3Input')?.value) || 0;
+  const c4 = parseFloat(document.getElementById('cat4Input')?.value) || 0;
+
+  const m1 = document.getElementById('mktCat1');
+  const m2 = document.getElementById('mktCat2');
+  const m3 = document.getElementById('mktCat3');
+  const m4 = document.getElementById('mktCat4');
+
+  if (m1) m1.value = Math.round(c1 * 0.7); // 70% typical target
+  if (m2) m2.value = Math.round(c2 * 0.5); // 50% typical target
+  if (m3) m3.value = Math.round(c3 * 0.5);
+  if (m4) m4.value = Math.round(c4 * 0.7);
+
+  runMarketplaceOptimization();
+}
+
+async function runMarketplaceOptimization() {
+  const obligations = {
+    cat_1: parseFloat(document.getElementById('mktCat1')?.value) || 0,
+    cat_2: parseFloat(document.getElementById('mktCat2')?.value) || 0,
+    cat_3: parseFloat(document.getElementById('mktCat3')?.value) || 0,
+    cat_4: parseFloat(document.getElementById('mktCat4')?.value) || 0,
+  };
+
+  try {
+    const res = await fetch('/api/marketplace/optimize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ obligations })
+    });
+    const d = await res.json();
+
+    const results = document.getElementById('mktOptimizationResults');
+    if (results) results.style.display = 'block';
+
+    document.getElementById('mktTotalMt').innerText = `${d.total_obligation_mt || 0} MT`;
+    document.getElementById('mktProcureCost').innerText = `₹${Math.round(d.total_market_procurement_cost_inr || 0).toLocaleString('en-IN')}`;
+    document.getElementById('mktEcPenalty').innerText = `₹${Math.round(d.total_ec_penalty_inr || 0).toLocaleString('en-IN')}`;
+    document.getElementById('mktNetSavings').innerText = `₹${Math.round(d.net_savings_inr || 0).toLocaleString('en-IN')}`;
+    document.getElementById('mktRoiPct').innerText = `+${d.savings_roi_pct || 0}% Rupee Advantage`;
+
+    const verdictEl = document.getElementById('mktVerdictText');
+    if (verdictEl) verdictEl.innerText = d.procurement_verdict || '';
+  } catch (e) {
+    console.warn('Error running marketplace optimization:', e);
+  }
+}
+
 
 

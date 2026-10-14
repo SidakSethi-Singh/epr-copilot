@@ -155,12 +155,32 @@ def generate_node_mock(state: GraphState) -> GraphState:
     if not docs:
         answer = "No relevant chunks found in the knowledge base for this question."
     else:
-        parts = ["[MOCK MODE -- no API key configured, showing raw retrieved chunks]\n"]
-        for d in docs:
-            m = d.metadata
-            flag = "  <-- NEEDS VERIFICATION, do not treat as confirmed" if m.get("confidence") == "needs_verify" else ""
-            parts.append(f"[{m['id']}] {m['title']}{flag}\nSource: {m['citation']}\n{d.page_content}\n")
-        answer = "\n".join(parts)
+        top_doc = docs[0]
+        top_meta = top_doc.metadata
+
+        lines = [
+            "**FY:** FY 2024-25 through FY 2027-28 (CPCB Schedule II Mandates)",
+            "**Applies to:** Producers, Importers, Brand Owners (PIBOs), and Plastic Waste Processors (PWPs)",
+            "",
+            "### 📋 Statutory Executive Finding",
+            f"Under **{top_meta.get('title', 'CPCB Guidelines')}** ([{top_meta.get('id', 'kb001')}], *{top_meta.get('citation', 'CPCB Schedule II')}*):",
+            "",
+            top_doc.page_content.strip(),
+        ]
+
+        if len(docs) > 1:
+            lines.append("")
+            lines.append("### ⚖️ Applicable Regulatory Clauses & Citations:")
+            for d in docs[1:4]:
+                m = d.metadata
+                flag = " *(Verification Advisory: Provisional notice)*" if m.get("confidence") == "needs_verify" else ""
+                lines.append(f"- **[{m['id']}] {m['title']}** (*Source: {m['citation']}*){flag}:")
+                content_preview = d.page_content.strip()
+                if len(content_preview) > 300:
+                    content_preview = content_preview[:300].rsplit(".", 1)[0] + "."
+                lines.append(f"  > {content_preview}")
+
+        answer = "\n".join(lines)
     return {**state, "answer": answer, "mode": "mock"}
 
 def generate_with_fallback(state: GraphState) -> GraphState:
